@@ -1,0 +1,134 @@
+{
+  "_lds": {
+    "uuid": "saint-auth-2026-001",
+    "type": "auth_component",
+    "version": "1.0.0",
+    "created": "2026-02-14T12:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 1,
+    "sequence": 4,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "PROJECT SAINT Authentication",
+    "description": "Authentication system supporting demo quick-login (for Nicole/Keith demos), Clerk production auth, and future GCP SSO integration. Demo mode NEVER hits real backend.",
+    "principle": "Authentication gates access. Authorization (kernel) gates actions. They are separate concerns."
+  },
+  "auth_modes": {
+    "demo": {
+      "description": "Quick-login buttons for each role. Instant access with synthetic data. For demonstrations and testing.",
+      "roles_available": [
+        {
+          "role": "gcp_admin",
+          "demo_user": {
+            "name": "Sarah Chen",
+            "title": "Platform Administrator",
+            "email": "admin@gcp-demo.saint.dev",
+            "avatar_initials": "SC"
+          }
+        },
+        {
+          "role": "gcp_engineer",
+          "demo_user": {
+            "name": "Nicole Calpin",
+            "title": "Design Engineer",
+            "email": "nicole.calpin@gcp-demo.saint.dev",
+            "avatar_initials": "NC"
+          }
+        },
+        {
+          "role": "sales_rep",
+          "demo_user": {
+            "name": "Marcus Rivera",
+            "title": "Regional Sales Manager",
+            "email": "m.rivera@gcp-demo.saint.dev",
+            "avatar_initials": "MR"
+          }
+        },
+        {
+          "role": "contractor",
+          "demo_user": {
+            "name": "Trinity Building Envelope",
+            "title": "Building Envelope Contractor",
+            "email": "info@trinity-demo.saint.dev",
+            "avatar_initials": "TB"
+          }
+        }
+      ],
+      "behavior": {
+        "backend_calls": "ZERO — all data is synthetic, loaded from demo_data entity",
+        "session_duration": "Unlimited (no expiry in demo mode)",
+        "data_persistence": "In-memory only — resets on page refresh",
+        "kernel_validation": "FULL — kernel still validates every action even in demo"
+      }
+    },
+    "clerk": {
+      "description": "Production authentication via Clerk. Email/password, Google SSO, magic link.",
+      "provider": "Clerk",
+      "configuration": {
+        "sign_in_routing": "hash",
+        "redirect_url": "/",
+        "multi_factor": "optional",
+        "allowed_domains": ["*"],
+        "role_mapping": "Clerk metadata.role → kernel role"
+      },
+      "session_management": {
+        "token_expiry": "24 hours",
+        "refresh_strategy": "Silent refresh via Clerk SDK",
+        "logout": "Clear session + redirect to login"
+      }
+    },
+    "gcp_sso": {
+      "description": "Future: Saint-Gobain enterprise SSO integration. SAML 2.0 or OIDC.",
+      "status": "STUB — Phase 5 deliverable",
+      "protocol": "SAML 2.0 preferred (Saint-Gobain enterprise standard)",
+      "role_mapping": "IDP groups → SAINT roles",
+      "provisioning": "JIT (Just-In-Time) user provisioning on first login"
+    }
+  },
+  "login_screen": {
+    "layout": {
+      "left_panel": {
+        "width": "50%",
+        "content": "Branding — logo, tagline, background image/gradient",
+        "white_label": "Replaced by client branding in white-label mode"
+      },
+      "right_panel": {
+        "width": "50%",
+        "content": "Auth form — Clerk sign-in OR demo role buttons",
+        "tabs": ["Sign In", "Try Demo"]
+      }
+    },
+    "demo_panel": {
+      "description": "4 role cards with name, title, icon. Click to instantly enter as that role.",
+      "header": "Experience PROJECT SAINT",
+      "subheader": "Select a role to explore the platform",
+      "cards_layout": "2x2 grid",
+      "card_content": ["Role icon", "Role name", "Description", "Click to enter"]
+    }
+  },
+  "security": {
+    "session_token_storage": "httpOnly cookie (Clerk manages this)",
+    "csrf_protection": "Clerk built-in",
+    "rate_limiting": "Clerk built-in + backend middleware",
+    "password_policy": "Clerk defaults (8+ chars, breach detection)",
+    "audit_logging": "Every login/logout/role-switch logged via kernel audit"
+  },
+  "react_component": {
+    "filename": "SAINTAuth.jsx",
+    "description": "Authentication component with dual-mode: demo quick-login and Clerk production auth. Provides AuthContext with currentUser, currentRole, isDemoMode, logout().",
+    "exports": [
+      "SAINTAuthProvider — wraps app, provides auth context",
+      "useSAINTAuth — hook for currentUser, currentRole, isDemoMode, login, logout",
+      "SAINTLoginScreen — the login page with Clerk + demo tabs",
+      "SAINTDemoSelector — the 4-role demo card grid",
+      "SAINTProtectedRoute — wraps routes requiring auth"
+    ],
+    "dependencies": ["@clerk/clerk-react (production)", "SAINTKernel (audit logging)"],
+    "code_reference": "See TRADEOS_AUTH.lds.json for implementation pattern. SAINT auth extends with GCP SSO stub and Nicole/Keith-specific demo personas."
+  }
+}

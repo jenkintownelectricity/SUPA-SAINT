@@ -1,0 +1,120 @@
+{
+  "_lds": {
+    "uuid": "saint-kernel-2026-001",
+    "type": "kernel_definition",
+    "version": "1.0.0",
+    "created": "2026-02-14T12:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 1,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "PROJECT SAINT Kernel",
+    "description": "Stateless CHECK-THEN-ACT validation engine for the GCP/Saint-Gobain Super App. Every user action passes through kernel before execution. Authority flows DOWN only.",
+    "principle": "L2 cannot escalate to L1 permissions. Unknown actions are DENIED. Every decision is logged."
+  },
+  "invariants": {
+    "IV01_DETERMINISM": {
+      "rule": "Same input MUST produce same output",
+      "enforcement": "Pure functions only, no side effects in validation",
+      "test": "validate({action:'create_shop_drawing', role:'gcp_engineer'}) === validate({action:'create_shop_drawing', role:'gcp_engineer'})",
+      "status": "ENFORCED"
+    },
+    "IV02_FAIL_CLOSED": {
+      "rule": "Unknown actions are DENIED by default",
+      "enforcement": "Whitelist architecture — only explicitly allowed actions pass",
+      "test": "validate({action:'unknown_action', role:'gcp_admin'}).result === 'DENIED'",
+      "status": "ENFORCED"
+    },
+    "IV03_SEPARATION_OF_POWERS": {
+      "rule": "Roles cannot grant themselves higher permissions",
+      "enforcement": "Role boundaries defined at L0, immutable at runtime",
+      "test": "validate({action:'elevate_role', role:'contractor'}).result === 'DENIED'",
+      "status": "ENFORCED"
+    },
+    "IV04_NO_IMPLICIT_AUTHORITY": {
+      "rule": "Every action requires explicit authorization",
+      "enforcement": "No inheritance, no escalation without L0 approval",
+      "test": "validate({action:'manage_billing', role:'gcp_engineer'}).result === 'DENIED'",
+      "status": "ENFORCED"
+    },
+    "IV05_TEMPORAL_CONTAINMENT": {
+      "rule": "All tokens have hard expiration",
+      "enforcement": "Session tokens expire, auth tokens expire, command tokens expire",
+      "test": "validate({action:'any', role:'any', token:{expiry:'2020-01-01'}}).result === 'DENIED'",
+      "status": "ENFORCED"
+    },
+    "IV06_NON_REPUDIATION": {
+      "rule": "Every decision produces an immutable audit log entry",
+      "enforcement": "Audit log append-only, includes actor, action, result, timestamp, audit_id",
+      "test": "auditLog.length increases by 1 after every validate() call",
+      "status": "ENFORCED"
+    },
+    "IV07_MONOTONIC_STATE": {
+      "rule": "State transitions are append-only, no rollback",
+      "enforcement": "No delete operations on audit, no state reversal",
+      "test": "auditLog entries cannot be removed or modified",
+      "status": "ENFORCED"
+    },
+    "IV08_FULL_TRACEABILITY": {
+      "rule": "Logs reproduce any decision deterministically",
+      "enforcement": "Audit log contains all inputs needed to replay decision",
+      "test": "replay(auditLog[n].inputs) === auditLog[n].result",
+      "status": "ENFORCED"
+    }
+  },
+  "validation_rules": {
+    "gcp_specific": [
+      {
+        "id": "VR-SAINT-001",
+        "name": "Product Specification Integrity",
+        "rule": "GCP product references must match current product catalog",
+        "enforcement": "Reject shop drawings referencing discontinued products"
+      },
+      {
+        "id": "VR-SAINT-002",
+        "name": "Warranty Boundary",
+        "rule": "Non-GCP products shown without warranty coverage",
+        "enforcement": "Flag non-GCP components, exclude from warranty scope"
+      },
+      {
+        "id": "VR-SAINT-003",
+        "name": "Territory Compliance",
+        "rule": "Sales reps can only manage opportunities in assigned territory",
+        "enforcement": "Cross-territory actions require gcp_admin escalation"
+      },
+      {
+        "id": "VR-SAINT-004",
+        "name": "Contractor Data Isolation",
+        "rule": "Contractors cannot see other contractors' project data",
+        "enforcement": "Data queries filtered by contractor_id, no cross-tenant leakage"
+      },
+      {
+        "id": "VR-SAINT-005",
+        "name": "Shop Drawing CAD Standards",
+        "rule": "All shop drawings must comply with LDS CAD layer naming and hatch patterns",
+        "enforcement": "DXF validation against layer standard before delivery"
+      }
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTKernel.jsx",
+    "description": "L1 Kernel — stateless validation engine. Provides KernelContext to entire app. Every action routed through validate() before execution.",
+    "exports": [
+      "SAINTKernelProvider — wraps app, provides validate() via context",
+      "useSAINTKernel — hook to access validate(), auditLog, currentRole",
+      "Role — type: 'gcp_admin' | 'gcp_engineer' | 'sales_rep' | 'contractor'",
+      "ActionResult — type: 'ALLOWED' | 'DENIED' | 'ESCALATE' | 'MISSING_REQUIREMENT'",
+      "ValidationRequest — { action, role, context?, timestamp? }",
+      "ValidationResponse — { result, action, role, reason?, escalateTo?, auditId, latencyMs }"
+    ],
+    "pattern": "createContext → useContext → validate(request) → { result, auditId, latencyMs }",
+    "performance_target": "< 0.3ms per validation (sub-millisecond)",
+    "code_reference": "See TRADEOS_KERNEL.lds.json react_component.code for implementation pattern. SAINT kernel follows identical architecture with GCP-specific role definitions and validation rules."
+  }
+}
