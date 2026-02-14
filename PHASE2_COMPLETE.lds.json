@@ -1,0 +1,139 @@
+{
+  "_lds": {
+    "uuid": "saint-phase2-complete-2026-001",
+    "type": "phase_summary",
+    "version": "1.0.0",
+    "created": "2026-02-14T15:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 2,
+    "status": "COMPLETE",
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-002",
+      "status": "AUTHORIZED"
+    }
+  },
+  "summary": {
+    "phase_name": "GCP_TOOLS",
+    "entities_created": 3,
+    "files": [
+      "SAINT_SHOP_DRAWINGS.lds.json — AI-powered shop drawing automation from assembly letter intake through DXF generation, review/approval workflow, and contractor delivery. 6 assembly types (EIF, AWB, FP, WP, CI, CJ), CAD standards enforcement, material schedule generation, ShopDrawings.AI API integration.",
+      "SAINT_OPP_SCRAPER.lds.json — Commercial development opportunity finder with 4 data sources (municipal permits, planning boards, Dodge reports, commercial real estate), Groq LPU classification with <100ms inference, territory-filtered assignment, composite scoring (0-100), daily digest and real-time alerts, background scraper jobs.",
+      "SAINT_PRODUCT_CONFIG.lds.json — GCP product configurator with full product catalog (EIFS, Air & Water Barriers, Fireproofing, Waterproofing), 5-step assembly configuration flow, 7 compatibility rules, CSI spec section mapping, material/cost estimation, shop drawing pipeline integration."
+    ],
+    "key_features_delivered": [
+      "Assembly letter OCR and AI extraction (GPT-4o Vision)",
+      "6 building envelope assembly types with layer-by-layer product selection",
+      "DXF generation with LDS CAD layer standards (SAINT_ prefix naming)",
+      "Drawing approval workflow (draft → in_review → revision_requested → approved → delivered)",
+      "Material schedule generation from shop drawings",
+      "4 commercial opportunity data sources with automated scraping",
+      "Groq LPU classification — opportunity type, envelope scope, GCP product fit, urgency",
+      "Composite opportunity scoring with 6 weighted factors",
+      "Territory-based opportunity assignment with ZIP/county granularity",
+      "Daily digest emails and real-time push alerts for hot opportunities",
+      "Complete GCP product catalog across 4 building envelope categories",
+      "Interactive assembly configurator with real-time compatibility validation",
+      "7 compatibility rules (product-to-product, substrate, discontinued, warranty, fire rating, climate zone, temperature)",
+      "CSI MasterFormat specification compliance mapping",
+      "Material quantity and cost estimation",
+      "Configuration-to-shop-drawing pipeline handoff",
+      "Demo data for all 3 entities with Philadelphia-area projects",
+      "REST API endpoints for all entity operations",
+      "Kernel validation integration (VR-SAINT-001 through VR-SAINT-005)"
+    ],
+    "architecture_decisions": [
+      "Each entity is self-contained .lds.json — loads independently via shell entity loader",
+      "Shop Drawings wraps existing ShopDrawings.AI API — no modification to standalone codebase",
+      "Opportunity Scraper uses background cron jobs for data ingestion, Groq for real-time classification",
+      "Product Configurator runs compatibility validation client-side for instant feedback, kernel validates server-side before persistence",
+      "All 3 entities reference Phase 1 kernel validation rules (VR-SAINT-001 through VR-SAINT-005)",
+      "Data isolation enforced at kernel level — contractors see own data, sales reps see own territory",
+      "Cross-entity integration: Product Config → Shop Drawings (configuration feeds drawing generation)"
+    ],
+    "kernel_rules_exercised": [
+      {
+        "rule": "VR-SAINT-001",
+        "name": "Product Specification Integrity",
+        "exercised_by": ["SAINT_SHOP_DRAWINGS (product references)", "SAINT_PRODUCT_CONFIG (discontinued product block)"]
+      },
+      {
+        "rule": "VR-SAINT-002",
+        "name": "Warranty Boundary",
+        "exercised_by": ["SAINT_PRODUCT_CONFIG (warranty system eligibility)", "SAINT_SHOP_DRAWINGS (warranty-eligible flag)"]
+      },
+      {
+        "rule": "VR-SAINT-003",
+        "name": "Territory Compliance",
+        "exercised_by": ["SAINT_OPP_SCRAPER (territory-filtered opportunity assignment)"]
+      },
+      {
+        "rule": "VR-SAINT-004",
+        "name": "Contractor Data Isolation",
+        "exercised_by": ["SAINT_SHOP_DRAWINGS (contractor sees own drawings only)"]
+      },
+      {
+        "rule": "VR-SAINT-005",
+        "name": "Shop Drawing CAD Standards",
+        "exercised_by": ["SAINT_SHOP_DRAWINGS (DXF layer naming, hatch patterns, text standards)"]
+      }
+    ],
+    "role_access_matrix": {
+      "gcp_admin": {
+        "SAINT_SHOP_DRAWINGS": "Full access — all engineer capabilities plus reporting",
+        "SAINT_OPP_SCRAPER": "Full access — all territories, scraper controls, territory management",
+        "SAINT_PRODUCT_CONFIG": "Full access — all engineer capabilities plus catalog management"
+      },
+      "gcp_engineer": {
+        "SAINT_SHOP_DRAWINGS": "Full access — create, edit, review, approve, deliver drawings",
+        "SAINT_OPP_SCRAPER": "DENIED — engineering role, not sales scope",
+        "SAINT_PRODUCT_CONFIG": "Full access — configure assemblies, validate, estimate, submit to drawings"
+      },
+      "sales_rep": {
+        "SAINT_SHOP_DRAWINGS": "DENIED — sales role, not engineering scope",
+        "SAINT_OPP_SCRAPER": "Territory-filtered — own opportunities, own territory stats, own alerts",
+        "SAINT_PRODUCT_CONFIG": "Read-only catalog — browse products, view specifications"
+      },
+      "contractor": {
+        "SAINT_SHOP_DRAWINGS": "Read-only — download approved drawings and view material schedules",
+        "SAINT_OPP_SCRAPER": "DENIED — contractor role, not sales scope",
+        "SAINT_PRODUCT_CONFIG": "Read-only catalog — browse products, request product info"
+      }
+    }
+  },
+  "phase_verification": {
+    "checklist": [
+      {"item": "SAINT_SHOP_DRAWINGS.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_OPP_SCRAPER.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_PRODUCT_CONFIG.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "All entities reference parent saint-master-2026-001", "status": "PASS"},
+      {"item": "All entities declare phase: 2 with correct sequence numbers", "status": "PASS"},
+      {"item": "All entities have react_component block with exports", "status": "PASS"},
+      {"item": "All entities have demo_data for demo mode", "status": "PASS"},
+      {"item": "All entities have backend API endpoints defined", "status": "PASS"},
+      {"item": "All entities reference kernel validation rules", "status": "PASS"},
+      {"item": "Role access defined for all 4 roles across all 3 entities", "status": "PASS"},
+      {"item": "Cross-entity dependencies documented", "status": "PASS"},
+      {"item": "Entity filenames match SAINT_MASTER_INDEX.lds.json manifest", "status": "PASS"}
+    ]
+  },
+  "next_phase_instructions": {
+    "phase": 3,
+    "name": "CONTRACTOR_PORTAL",
+    "l0_command": "L0-CMD-2026-0214-003 (to be issued)",
+    "entities_to_build": [
+      "SAINT_CONTRACTOR_DASH.lds.json — Contractor-facing dashboard with project overview, recent activity, notifications, and quick-access widgets for their most-used tools (shop drawings, warranty, submittals)",
+      "SAINT_WARRANTY.lds.json — Warranty tracking and claim management. Track warranty coverage per project/assembly, submit claims, dispute resolution workflow, integration with Product Config warranty data",
+      "SAINT_SUBMITTALS.lds.json — Submittal package management. Assemble submittal packages from product data sheets, test reports, and shop drawings. Track review status and approvals"
+    ],
+    "dependencies": "Phase 1 foundation (kernel, boundaries, shell, auth) + Phase 2 tools (shop drawings, product config) must be functional. Warranty entity reads warranty data from Product Config. Submittals entity references shop drawings and product data.",
+    "command_for_next_chat": "Continue building PROJECT SAINT Phase 3. Reference SAINT_MASTER_INDEX.lds.json, Phase 1 entities, and Phase 2 entities. Build the CONTRACTOR_PORTAL tier: Contractor Dashboard, Warranty, and Submittals. Each as a self-contained .lds.json entity file that loads into the SAINT shell via the entity loader."
+  },
+  "assembly_preview": {
+    "when": "After all 6 phases complete",
+    "how": "Create SAINT_ASSEMBLER.lds.json that extracts code from all entities, resolves imports, and produces deployable application",
+    "output": "Deployable artifact — Railway backend + Vercel frontend, or all-Railway",
+    "phases_complete": "2 of 6",
+    "entities_complete": "7 of 18 total (4 Phase 1 + 3 Phase 2)"
+  }
+}
