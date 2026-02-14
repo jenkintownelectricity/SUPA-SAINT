@@ -1,0 +1,337 @@
+{
+  "_lds": {
+    "uuid": "saint-shop-drawings-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T14:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 2,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-002",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Shop Drawings",
+    "description": "AI-powered shop drawing automation tool. Ingests assembly letters, extracts building envelope specifications, generates shop drawings with GCP product integration, and outputs CAD-compliant DXF files. Integrates the existing ShopDrawings.AI workflow as a kernel-governed SAINT entity.",
+    "principle": "Assembly letter IN → validated shop drawing OUT. Every drawing passes kernel validation for product integrity, CAD standards, and warranty scope before delivery."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all drawing actions via CHECK-THEN-ACT",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — gcp_engineer creates/edits, contractor downloads, sales_rep denied",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for data isolation and audit trail"
+  },
+  "workflow": {
+    "description": "End-to-end shop drawing pipeline from assembly letter intake to DXF delivery",
+    "stages": [
+      {
+        "id": "intake",
+        "name": "Assembly Letter Intake",
+        "description": "Upload assembly letters (PDF, image, or manual entry). System extracts project metadata, assembly specifications, and product references.",
+        "actions": ["upload_assembly_letter", "parse_assembly_letter"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "inputs": {
+          "assembly_letter": {
+            "formats": ["PDF", "PNG", "JPG", "TIFF"],
+            "max_size": "25MB",
+            "fields_extracted": [
+              "project_name",
+              "project_address",
+              "contractor_name",
+              "architect_name",
+              "assembly_type",
+              "assembly_code",
+              "product_references",
+              "dimensions",
+              "special_conditions",
+              "warranty_requirements"
+            ]
+          },
+          "manual_entry": {
+            "description": "Direct form input when no assembly letter document exists",
+            "required_fields": ["project_name", "assembly_type", "product_references"]
+          }
+        },
+        "ai_processing": {
+          "model": "GPT-4o Vision (assembly letter OCR + extraction)",
+          "fallback": "Manual field correction if AI confidence < 85%",
+          "validation": "Extracted products checked against SAINT_PRODUCT_CONFIG catalog"
+        }
+      },
+      {
+        "id": "configuration",
+        "name": "Drawing Configuration",
+        "description": "Configure drawing parameters based on extracted assembly data. Select assembly type, products, dimensions, and detail level.",
+        "actions": ["configure_drawing", "select_assembly_type", "select_products"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "assembly_types": [
+          {
+            "code": "EIF",
+            "name": "Exterior Insulation and Finish System (EIFS)",
+            "layers": ["substrate", "insulation", "base_coat", "reinforcement", "finish_coat"],
+            "gcp_products": ["Perma Finish", "Gold Coat", "Dur-O-Wal"]
+          },
+          {
+            "code": "AWB",
+            "name": "Air & Water Barrier",
+            "layers": ["substrate", "primer", "membrane", "protection_board"],
+            "gcp_products": ["Perm-A-Barrier", "Hydroduct"]
+          },
+          {
+            "code": "FP",
+            "name": "Fireproofing",
+            "layers": ["steel_substrate", "fireproofing_material", "finish"],
+            "gcp_products": ["Monokote", "Cafco"]
+          },
+          {
+            "code": "WP",
+            "name": "Waterproofing",
+            "layers": ["substrate", "primer", "waterproofing_membrane", "protection", "drainage"],
+            "gcp_products": ["Hydroduct", "Bituthene"]
+          },
+          {
+            "code": "CI",
+            "name": "Continuous Insulation",
+            "layers": ["substrate", "insulation_board", "fasteners", "cladding_attachment"],
+            "gcp_products": ["Styrofoam", "Thermafiber"]
+          },
+          {
+            "code": "CJ",
+            "name": "Control Joints & Expansion Joints",
+            "layers": ["substrate", "backer_rod", "sealant", "joint_cover"],
+            "gcp_products": ["Pecora", "Tremco"]
+          }
+        ],
+        "detail_levels": [
+          {"level": "typical", "description": "Standard wall section — most common"},
+          {"level": "detail", "description": "Enlarged detail at penetrations, transitions, terminations"},
+          {"level": "plan", "description": "Floor plan showing assembly extents"},
+          {"level": "elevation", "description": "Building elevation with assembly zones"}
+        ]
+      },
+      {
+        "id": "generation",
+        "name": "Drawing Generation",
+        "description": "AI generates shop drawing from configured parameters. Produces layered CAD output with GCP product callouts, dimensions, and notes.",
+        "actions": ["generate_drawing", "generate_dxf"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "ai_processing": {
+          "model": "Custom DXF generation engine",
+          "cad_standards": {
+            "layer_prefix": "SAINT_",
+            "layer_naming": "{PREFIX}_{ASSEMBLY_CODE}_{ELEMENT}",
+            "example_layers": [
+              "SAINT_EIF_SUBSTRATE",
+              "SAINT_EIF_INSULATION",
+              "SAINT_EIF_BASECOAT",
+              "SAINT_EIF_FINISH",
+              "SAINT_DIM_HORIZONTAL",
+              "SAINT_DIM_VERTICAL",
+              "SAINT_NOTE_PRODUCT",
+              "SAINT_NOTE_GENERAL",
+              "SAINT_HATCH_INSULATION",
+              "SAINT_HATCH_CONCRETE",
+              "SAINT_HATCH_STEEL"
+            ],
+            "line_types": {
+              "visible": "CONTINUOUS",
+              "hidden": "DASHED",
+              "center": "CENTER",
+              "break": "PHANTOM"
+            },
+            "hatch_patterns": {
+              "insulation": "INSUL",
+              "concrete": "AR-CONC",
+              "steel": "STEEL",
+              "earth": "EARTH",
+              "membrane": "DOTS"
+            },
+            "text_standards": {
+              "title_height": "3/16 inch",
+              "note_height": "3/32 inch",
+              "dimension_height": "3/32 inch",
+              "font": "SIMPLEX.SHX"
+            }
+          },
+          "output_format": "DXF (AutoCAD 2018 compatible)",
+          "coordinate_system": "architectural (feet-inches, 1/16 precision)"
+        },
+        "kernel_validation": {
+          "pre_generation": [
+            "VR-SAINT-001 — all referenced products exist in current GCP catalog",
+            "VR-SAINT-005 — CAD layer naming complies with LDS standard"
+          ],
+          "post_generation": [
+            "DXF file validates against layer standard",
+            "All product callouts match catalog entries",
+            "Dimension values are within physical plausibility bounds",
+            "Warranty-eligible products flagged correctly"
+          ]
+        }
+      },
+      {
+        "id": "review",
+        "name": "Review & Markup",
+        "description": "Engineer reviews generated drawing. In-browser preview with markup tools. Accept, revise, or reject.",
+        "actions": ["review_shop_drawing", "edit_shop_drawing", "approve_drawing"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "review_tools": {
+          "preview": "In-browser DXF viewer with zoom, pan, layer toggle",
+          "markup": "Cloud annotations, text notes, dimension overrides",
+          "revision_history": "Every revision tracked with diff and author",
+          "approval_workflow": {
+            "states": ["draft", "in_review", "revision_requested", "approved", "delivered"],
+            "transitions": {
+              "draft_to_in_review": "Engineer submits for review",
+              "in_review_to_revision_requested": "Reviewer requests changes",
+              "revision_requested_to_in_review": "Engineer resubmits",
+              "in_review_to_approved": "Reviewer approves",
+              "approved_to_delivered": "Drawing delivered to contractor"
+            }
+          }
+        }
+      },
+      {
+        "id": "delivery",
+        "name": "Delivery & Download",
+        "description": "Approved drawings delivered to contractor portal. DXF download, PDF export, material schedule generation.",
+        "actions": ["download_shop_drawings", "export_pdf", "generate_material_schedule"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin", "contractor"],
+        "outputs": {
+          "dxf": {
+            "description": "AutoCAD-compatible DXF file with all layers",
+            "delivery": "Direct download from contractor portal"
+          },
+          "pdf": {
+            "description": "Flattened PDF for printing and field reference",
+            "page_size": "ARCH D (24x36)",
+            "includes": ["title_block", "drawing", "notes", "material_schedule"]
+          },
+          "material_schedule": {
+            "description": "Extracted bill of materials from drawing",
+            "columns": ["item", "product_name", "manufacturer", "specification", "quantity", "unit", "gcp_part_number"],
+            "format": "CSV or embedded in PDF"
+          }
+        },
+        "contractor_access": {
+          "description": "Contractors see only drawings assigned to their projects",
+          "enforcement": "SAINT_BOUNDARIES contractor data isolation",
+          "actions_available": ["download_shop_drawings", "view_material_schedule"],
+          "actions_denied": ["edit_shop_drawing", "create_shop_drawing"]
+        }
+      }
+    ]
+  },
+  "data_model": {
+    "shop_drawing": {
+      "id": "uuid",
+      "project_id": "uuid — links to project entity",
+      "contractor_id": "uuid — for data isolation",
+      "assembly_letter_id": "uuid — source document reference",
+      "assembly_type": "EIF | AWB | FP | WP | CI | CJ",
+      "title": "string — drawing title",
+      "drawing_number": "string — sequential, project-scoped (e.g., SD-001)",
+      "revision": "integer — starts at 0, increments on each revision",
+      "status": "draft | in_review | revision_requested | approved | delivered",
+      "created_by": "uuid — engineer who created",
+      "reviewed_by": "uuid — reviewer (if applicable)",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "dxf_url": "string — storage URL for DXF file",
+      "pdf_url": "string — storage URL for PDF export",
+      "material_schedule": "array — extracted BOM",
+      "products_referenced": "array — GCP product IDs used in drawing",
+      "warranty_eligible": "boolean — true if all products are GCP warranty-covered",
+      "ai_confidence": "number — 0-100, AI extraction confidence score",
+      "notes": "string — engineer notes",
+      "audit_trail": "array — append-only log of all actions on this drawing"
+    },
+    "assembly_letter": {
+      "id": "uuid",
+      "project_id": "uuid",
+      "uploaded_by": "uuid",
+      "uploaded_at": "ISO8601",
+      "file_url": "string — storage URL for original document",
+      "file_type": "PDF | PNG | JPG | TIFF",
+      "file_size_bytes": "integer",
+      "parsed": "boolean",
+      "parsed_at": "ISO8601 | null",
+      "extracted_data": "object — structured extraction results",
+      "ai_confidence": "number — 0-100",
+      "manual_corrections": "array — fields corrected by engineer"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic data for demo mode. Nicole Calpin as gcp_engineer.",
+    "projects": [
+      {
+        "project_name": "One Liberty Place — Facade Restoration",
+        "contractor": "Trinity Building Envelope",
+        "assembly_type": "EIF",
+        "status": "approved",
+        "drawings": 4,
+        "products": ["Perma Finish EIF-220", "Gold Coat CI-100"]
+      },
+      {
+        "project_name": "Comcast Technology Center — Level 12 AWB",
+        "contractor": "Trinity Building Envelope",
+        "assembly_type": "AWB",
+        "status": "in_review",
+        "drawings": 2,
+        "products": ["Perm-A-Barrier NPS", "Hydroduct 660"]
+      },
+      {
+        "project_name": "Children's Hospital of Philadelphia — Wing B Fireproofing",
+        "contractor": "Metro Fireproofing Inc.",
+        "assembly_type": "FP",
+        "status": "draft",
+        "drawings": 1,
+        "products": ["Monokote MK-6/HY", "Cafco 300"]
+      }
+    ]
+  },
+  "integration": {
+    "shop_drawings_ai": {
+      "description": "Existing ShopDrawings.AI standalone application. SAINT wraps this workflow as a kernel-governed entity. The standalone app code is NOT modified — SAINT provides the governance layer, auth, and delivery pipeline.",
+      "relationship": "SAINT_SHOP_DRAWINGS calls ShopDrawings.AI API for DXF generation, then validates output against kernel rules before delivery.",
+      "api_endpoints": [
+        {"method": "POST", "path": "/api/parse-assembly-letter", "description": "Upload and parse assembly letter"},
+        {"method": "POST", "path": "/api/generate-drawing", "description": "Generate DXF from parsed data"},
+        {"method": "GET", "path": "/api/drawings/:id", "description": "Retrieve drawing by ID"},
+        {"method": "GET", "path": "/api/drawings/:id/dxf", "description": "Download DXF file"},
+        {"method": "GET", "path": "/api/drawings/:id/pdf", "description": "Download PDF export"},
+        {"method": "GET", "path": "/api/drawings/:id/material-schedule", "description": "Get material schedule"}
+      ]
+    }
+  },
+  "react_component": {
+    "filename": "SAINTShopDrawings.jsx",
+    "description": "Shop drawing management interface. Dashboard view shows all drawings with status filters. Intake form handles assembly letter upload. Drawing viewer renders DXF preview. Material schedule table. All actions validated through kernel before execution.",
+    "exports": [
+      "SAINTShopDrawings — main entity component (dashboard + routing)",
+      "ShopDrawingsDashboard — list view with filters (status, project, date)",
+      "AssemblyLetterUpload — drag-drop upload with AI parsing progress",
+      "DrawingConfigurator — assembly type selection, product picker, detail level",
+      "DrawingViewer — in-browser DXF preview with layer controls",
+      "DrawingReview — markup tools, approval workflow, revision history",
+      "MaterialSchedule — extracted BOM table with GCP product links",
+      "DrawingDelivery — download options (DXF, PDF) for approved drawings"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context)",
+      "SAINTAuth (user identity, role)",
+      "SAINT_PRODUCT_CONFIG (product catalog lookup)",
+      "ShopDrawings.AI API (DXF generation backend)"
+    ],
+    "views": {
+      "gcp_engineer": "Full access — create, edit, review, approve, deliver",
+      "gcp_admin": "Full access — all engineer capabilities plus reporting",
+      "contractor": "Read-only — download approved drawings and view material schedules",
+      "sales_rep": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern: self-contained component loaded by SAINTShell entity loader. Stateless — all intelligence in data and kernel validation."
+  }
+}

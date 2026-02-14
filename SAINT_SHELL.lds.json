@@ -1,0 +1,128 @@
+{
+  "_lds": {
+    "uuid": "saint-shell-2026-001",
+    "type": "ui_component",
+    "version": "1.0.0",
+    "created": "2026-02-14T12:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 1,
+    "sequence": 3,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "PROJECT SAINT App Shell",
+    "description": "Stateless UI shell. Navigation, layout, entity loader. Intelligence lives in entities, not here. Thin shell — buttons, forms, display only. All logic delegated to kernel.",
+    "principle": "The shell renders what the kernel allows. Nothing more."
+  },
+  "navigation": {
+    "by_role": {
+      "gcp_admin": [
+        {"id": "dashboard", "label": "Dashboard", "icon": "LayoutDashboard", "entity": "SAINT_ADMIN_DASH"},
+        {"id": "users", "label": "Users", "icon": "Users", "entity": "SAINT_ADMIN_USERS"},
+        {"id": "shop_drawings", "label": "Shop Drawings", "icon": "FileText", "entity": "SAINT_SHOP_DRAWINGS"},
+        {"id": "opportunities", "label": "Opportunities", "icon": "Target", "entity": "SAINT_OPP_SCRAPER"},
+        {"id": "products", "label": "Products", "icon": "Package", "entity": "SAINT_PRODUCT_CONFIG"},
+        {"id": "warranty", "label": "Warranty", "icon": "Shield", "entity": "SAINT_WARRANTY"},
+        {"id": "pipeline", "label": "Pipeline", "icon": "TrendingUp", "entity": "SAINT_PIPELINE"},
+        {"id": "territories", "label": "Territories", "icon": "Map", "entity": "SAINT_TERRITORIES"},
+        {"id": "reports", "label": "Reports", "icon": "BarChart3", "entity": "SAINT_REPORTING"},
+        {"id": "branding", "label": "Branding", "icon": "Palette", "entity": "SAINT_WHITE_LABEL"},
+        {"id": "billing", "label": "Billing", "icon": "CreditCard", "entity": "SAINT_BILLING"},
+        {"id": "settings", "label": "Settings", "icon": "Settings", "entity": "SAINT_ADMIN"}
+      ],
+      "gcp_engineer": [
+        {"id": "dashboard", "label": "Dashboard", "icon": "LayoutDashboard", "entity": "SAINT_ENGINEER_DASH"},
+        {"id": "shop_drawings", "label": "Shop Drawings", "icon": "FileText", "entity": "SAINT_SHOP_DRAWINGS"},
+        {"id": "products", "label": "Products", "icon": "Package", "entity": "SAINT_PRODUCT_CONFIG"},
+        {"id": "warranty", "label": "Warranty", "icon": "Shield", "entity": "SAINT_WARRANTY"},
+        {"id": "submittals", "label": "Submittals", "icon": "ClipboardCheck", "entity": "SAINT_SUBMITTALS"},
+        {"id": "projects", "label": "Projects", "icon": "FolderOpen", "entity": "SAINT_PROJECTS"},
+        {"id": "reports", "label": "My Reports", "icon": "BarChart3", "entity": "SAINT_REPORTING"}
+      ],
+      "sales_rep": [
+        {"id": "dashboard", "label": "Dashboard", "icon": "LayoutDashboard", "entity": "SAINT_SALES_DASH"},
+        {"id": "opportunities", "label": "Opportunities", "icon": "Target", "entity": "SAINT_OPP_SCRAPER"},
+        {"id": "pipeline", "label": "Pipeline", "icon": "TrendingUp", "entity": "SAINT_PIPELINE"},
+        {"id": "territory", "label": "My Territory", "icon": "Map", "entity": "SAINT_TERRITORIES"},
+        {"id": "contractors", "label": "Contractors", "icon": "HardHat", "entity": "SAINT_CONTRACTOR_LIST"},
+        {"id": "products", "label": "Products", "icon": "Package", "entity": "SAINT_PRODUCT_CONFIG"},
+        {"id": "reports", "label": "My Reports", "icon": "BarChart3", "entity": "SAINT_REPORTING"}
+      ],
+      "contractor": [
+        {"id": "dashboard", "label": "Dashboard", "icon": "LayoutDashboard", "entity": "SAINT_CONTRACTOR_DASH"},
+        {"id": "projects", "label": "My Projects", "icon": "FolderOpen", "entity": "SAINT_PROJECTS"},
+        {"id": "shop_drawings", "label": "Shop Drawings", "icon": "FileText", "entity": "SAINT_SHOP_DRAWINGS"},
+        {"id": "warranty", "label": "Warranty", "icon": "Shield", "entity": "SAINT_WARRANTY"},
+        {"id": "submittals", "label": "Submittals", "icon": "ClipboardCheck", "entity": "SAINT_SUBMITTALS"},
+        {"id": "products", "label": "Product Catalog", "icon": "Package", "entity": "SAINT_PRODUCT_CONFIG"}
+      ]
+    }
+  },
+  "layout": {
+    "structure": "sidebar + main content area",
+    "sidebar": {
+      "width": "260px",
+      "collapsed_width": "64px",
+      "position": "left",
+      "contains": ["logo", "navigation", "role_indicator", "user_menu"]
+    },
+    "header": {
+      "height": "64px",
+      "contains": ["page_title", "breadcrumbs", "search", "notifications", "user_avatar"]
+    },
+    "main": {
+      "contains": ["entity_renderer"],
+      "description": "Entity loader — loads the active entity's React component and renders it"
+    },
+    "responsive": {
+      "mobile_breakpoint": "768px",
+      "mobile_nav": "bottom tab bar with 5 most-used items per role",
+      "tablet_breakpoint": "1024px",
+      "tablet_nav": "collapsed sidebar"
+    }
+  },
+  "theming": {
+    "default": {
+      "name": "ValidKernel",
+      "background": "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)",
+      "glass": "rgba(255,255,255,0.06)",
+      "glass_border": "rgba(255,255,255,0.1)",
+      "text_primary": "#ffffff",
+      "text_secondary": "rgba(255,255,255,0.6)",
+      "accent": "#60a5fa",
+      "success": "#34d399",
+      "warning": "#fbbf24",
+      "error": "#f87171",
+      "sidebar_bg": "rgba(0,0,0,0.3)"
+    },
+    "white_label_override": {
+      "description": "When white-label entity is loaded, these values are replaced with client branding",
+      "overridable": ["background", "accent", "logo", "app_name", "favicon"],
+      "not_overridable": ["kernel_behavior", "invariant_enforcement", "audit_logging"]
+    }
+  },
+  "entity_loader": {
+    "description": "The shell's entity loader is the core mechanism. When a user clicks a nav item, the shell: (1) asks kernel if action is ALLOWED, (2) if yes, loads the entity's React component, (3) renders it in the main content area, (4) logs the navigation in audit.",
+    "pattern": "navigate(entityId) → kernel.validate({action: 'load_entity', entity: entityId, role}) → if ALLOWED → loadEntity(entityId) → render()",
+    "loading_state": "Skeleton UI while entity loads",
+    "error_state": "ErrorBoundary wraps every entity render — crash in one entity doesn't crash shell",
+    "not_found_state": "Friendly 'Module not available' with role-appropriate message"
+  },
+  "react_component": {
+    "filename": "SAINTShell.jsx",
+    "description": "Responsive app shell with role-aware sidebar navigation, entity loader, glassmorphism design. Consumes SAINTKernelProvider context for validation.",
+    "exports": [
+      "SAINTShell — main shell component",
+      "SAINTSidebar — role-aware navigation sidebar",
+      "SAINTHeader — page header with breadcrumbs and search",
+      "SAINTEntityLoader — loads and renders entity components",
+      "SAINTErrorBoundary — wraps entity renders"
+    ],
+    "dependencies": ["SAINTKernel (context)", "SAINTAuth (user/role)"],
+    "code_reference": "See TRADEOS_SHELL.lds.json for implementation pattern. SAINT shell follows identical architecture with GCP-specific navigation and white-label theming support."
+  }
+}

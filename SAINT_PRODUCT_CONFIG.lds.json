@@ -1,0 +1,546 @@
+{
+  "_lds": {
+    "uuid": "saint-product-config-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T14:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 2,
+    "sequence": 3,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-002",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Product Configurator",
+    "description": "GCP product configurator for building envelope assemblies. Engineers select assembly types, configure product layers, validate compatibility, and generate specification-compliant configurations. Integrated with the GCP product catalog, shop drawing pipeline, and warranty system.",
+    "principle": "Valid configurations only. Every product combination validated against compatibility rules, specification requirements, and warranty eligibility before acceptance. No invalid assemblies leave this tool."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all configuration actions, enforces VR-SAINT-001 Product Specification Integrity",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — gcp_engineer configures, gcp_admin configures + manages catalog, sales_rep views catalog, contractor views catalog",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for audit trail",
+    "shop_drawings": "SAINT_SHOP_DRAWINGS.lds.json — configured assemblies feed into shop drawing generation"
+  },
+  "product_catalog": {
+    "description": "Complete GCP/Saint-Gobain product catalog organized by building envelope system. Each product has specifications, compatibility rules, and warranty coverage data.",
+    "categories": [
+      {
+        "id": "eifs",
+        "name": "Exterior Insulation & Finish Systems (EIFS)",
+        "description": "Complete EIFS wall assemblies including insulation, base coat, reinforcement, and finish coat",
+        "products": [
+          {
+            "id": "gcp-eifs-001",
+            "name": "Perma Finish EIF-220",
+            "type": "finish_coat",
+            "description": "Acrylic-based textured finish coat for EIFS assemblies",
+            "specifications": {
+              "thickness_range": "1/16 to 3/16 inch",
+              "textures": ["sand", "swirl", "smooth", "coarse"],
+              "colors": "Custom color matching available",
+              "coverage": "80-120 sq ft per gallon depending on texture",
+              "application_temp": "40°F to 90°F",
+              "cure_time": "24-48 hours"
+            },
+            "compatible_with": ["gcp-eifs-002", "gcp-eifs-003", "gcp-eifs-004"],
+            "warranty": {"years": 10, "type": "limited", "covers": ["cracking", "delamination", "color_fade"]},
+            "spec_section": "07 24 13",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-eifs-002",
+            "name": "Gold Coat CI-100",
+            "type": "continuous_insulation",
+            "description": "EPS insulation board for EIFS and continuous insulation assemblies",
+            "specifications": {
+              "thickness_options": ["1 inch", "1.5 inch", "2 inch", "3 inch", "4 inch"],
+              "r_value_per_inch": 3.85,
+              "density": "1.0 pcf minimum",
+              "flame_spread": 25,
+              "smoke_developed": 450,
+              "compressive_strength": "15 psi minimum"
+            },
+            "compatible_with": ["gcp-eifs-001", "gcp-eifs-003", "gcp-eifs-004"],
+            "warranty": {"years": 10, "type": "limited", "covers": ["dimensional_stability", "r_value_retention"]},
+            "spec_section": "07 24 13",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-eifs-003",
+            "name": "Dur-O-Wal Base Coat BC-200",
+            "type": "base_coat",
+            "description": "Polymer-modified base coat with embedded reinforcing mesh",
+            "specifications": {
+              "thickness": "1/16 inch nominal",
+              "mesh_type": "4 oz glass fiber reinforcing mesh",
+              "application_method": "trowel-applied",
+              "pot_life": "2 hours at 70°F",
+              "coverage": "100-130 sq ft per gallon"
+            },
+            "compatible_with": ["gcp-eifs-001", "gcp-eifs-002", "gcp-eifs-004"],
+            "warranty": {"years": 10, "type": "system", "covers": ["adhesion", "impact_resistance"]},
+            "spec_section": "07 24 13",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-eifs-004",
+            "name": "EIFS Adhesive ADH-50",
+            "type": "adhesive",
+            "description": "Polymer-modified adhesive for bonding insulation board to substrate",
+            "specifications": {
+              "bond_strength": ">7 psi",
+              "application_method": "ribbon and dab or notched trowel",
+              "open_time": "15-20 minutes",
+              "coverage": "40-60 sq ft per gallon"
+            },
+            "compatible_with": ["gcp-eifs-001", "gcp-eifs-002", "gcp-eifs-003"],
+            "warranty": {"years": 10, "type": "system", "covers": ["adhesion_failure"]},
+            "spec_section": "07 24 13",
+            "discontinued": false
+          }
+        ]
+      },
+      {
+        "id": "awb",
+        "name": "Air & Water Barriers",
+        "description": "Self-adhered and fluid-applied air and water barrier membranes for building envelope protection",
+        "products": [
+          {
+            "id": "gcp-awb-001",
+            "name": "Perm-A-Barrier NPS",
+            "type": "self_adhered_membrane",
+            "description": "Non-permeable self-adhered sheet membrane air and water barrier",
+            "specifications": {
+              "thickness": "40 mils",
+              "air_permeance": "<0.004 cfm/sq ft at 1.57 psf",
+              "water_penetration": "None at 12 psf",
+              "peel_adhesion": ">3 lbs/inch",
+              "application_temp": "25°F to 120°F",
+              "roll_size": "4 ft x 75 ft"
+            },
+            "compatible_with": ["gcp-awb-002", "gcp-awb-003", "gcp-awb-004"],
+            "warranty": {"years": 15, "type": "system", "covers": ["air_leakage", "water_intrusion"]},
+            "spec_section": "07 27 00",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-awb-002",
+            "name": "Perm-A-Barrier VPL 50",
+            "type": "fluid_applied_membrane",
+            "description": "Vapor-permeable liquid-applied air and water barrier",
+            "specifications": {
+              "thickness_wet": "50 mils",
+              "thickness_dry": "25 mils",
+              "water_vapor_permeance": "12 perms",
+              "air_permeance": "<0.004 cfm/sq ft",
+              "application_method": "spray or roller",
+              "coverage": "30-40 sq ft per gallon"
+            },
+            "compatible_with": ["gcp-awb-001", "gcp-awb-003", "gcp-awb-004"],
+            "warranty": {"years": 15, "type": "system", "covers": ["air_leakage", "water_intrusion"]},
+            "spec_section": "07 27 00",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-awb-003",
+            "name": "Hydroduct 660",
+            "type": "drainage_mat",
+            "description": "High-flow drainage mat for use behind cladding systems",
+            "specifications": {
+              "core_thickness": "0.25 inch",
+              "flow_rate": "16 gal/min/ft at 3600 psf",
+              "compressive_strength": "15,000 psf",
+              "roll_size": "4 ft x 50 ft",
+              "filter_fabric": "non-woven geotextile"
+            },
+            "compatible_with": ["gcp-awb-001", "gcp-awb-002", "gcp-awb-004"],
+            "warranty": {"years": 15, "type": "system", "covers": ["drainage_performance"]},
+            "spec_section": "07 27 00",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-awb-004",
+            "name": "Perm-A-Barrier Primer",
+            "type": "primer",
+            "description": "Water-based primer for Perm-A-Barrier membrane substrates",
+            "specifications": {
+              "application_method": "roller, brush, or spray",
+              "coverage": "250-350 sq ft per gallon",
+              "dry_time": "30-60 minutes",
+              "substrate_compatibility": ["concrete", "CMU", "gypsum_sheathing", "plywood", "OSB"]
+            },
+            "compatible_with": ["gcp-awb-001", "gcp-awb-002", "gcp-awb-003"],
+            "warranty": {"years": 15, "type": "system", "covers": ["adhesion"]},
+            "spec_section": "07 27 00",
+            "discontinued": false
+          }
+        ]
+      },
+      {
+        "id": "fireproofing",
+        "name": "Fireproofing",
+        "description": "Spray-applied fire resistive materials (SFRM) for structural steel and deck protection",
+        "products": [
+          {
+            "id": "gcp-fp-001",
+            "name": "Monokote MK-6/HY",
+            "type": "cementitious_fireproofing",
+            "description": "High-yield cementitious spray-applied fireproofing for structural steel",
+            "specifications": {
+              "density": "15 pcf",
+              "bond_strength": ">200 psf",
+              "fire_rating": "1-4 hours depending on thickness",
+              "thickness_1hr": "3/8 inch (W8x28 column)",
+              "thickness_2hr": "7/8 inch (W8x28 column)",
+              "thickness_3hr": "1-3/8 inch (W8x28 column)",
+              "application_method": "spray-applied",
+              "ul_design": "Multiple UL assemblies"
+            },
+            "compatible_with": ["gcp-fp-002"],
+            "warranty": {"years": "project_life", "type": "limited", "covers": ["fire_rating_performance"]},
+            "spec_section": "07 81 00",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-fp-002",
+            "name": "Cafco 300",
+            "type": "cementitious_fireproofing",
+            "description": "Standard-density cementitious spray-applied fireproofing",
+            "specifications": {
+              "density": "22 pcf",
+              "bond_strength": ">400 psf",
+              "fire_rating": "1-4 hours",
+              "thickness_1hr": "1/4 inch (W8x28 column)",
+              "thickness_2hr": "5/8 inch (W8x28 column)",
+              "application_method": "spray-applied",
+              "impact_resistance": "High — suitable for occupied areas"
+            },
+            "compatible_with": ["gcp-fp-001"],
+            "warranty": {"years": "project_life", "type": "limited", "covers": ["fire_rating_performance"]},
+            "spec_section": "07 81 00",
+            "discontinued": false
+          }
+        ]
+      },
+      {
+        "id": "waterproofing",
+        "name": "Waterproofing",
+        "description": "Below-grade and plaza deck waterproofing membranes",
+        "products": [
+          {
+            "id": "gcp-wp-001",
+            "name": "Bituthene 3000",
+            "type": "self_adhered_waterproofing",
+            "description": "Self-adhered rubberized asphalt waterproofing membrane for below-grade applications",
+            "specifications": {
+              "thickness": "60 mils",
+              "elongation": ">300%",
+              "hydrostatic_head": ">230 ft",
+              "application_temp": "25°F to 140°F",
+              "roll_size": "3 ft x 66.7 ft",
+              "substrate_requirements": ["concrete", "CMU (primed)"]
+            },
+            "compatible_with": ["gcp-wp-002", "gcp-wp-003"],
+            "warranty": {"years": 15, "type": "system", "covers": ["water_intrusion"]},
+            "spec_section": "07 11 13",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-wp-002",
+            "name": "Bituthene Liquid Membrane",
+            "type": "fluid_applied_waterproofing",
+            "description": "Fluid-applied waterproofing for complex geometries and detail areas",
+            "specifications": {
+              "thickness_wet": "80 mils",
+              "thickness_dry": "40 mils",
+              "elongation": ">500%",
+              "application_method": "spray, roller, or trowel",
+              "coverage": "20-25 sq ft per gallon",
+              "cure_time": "24 hours"
+            },
+            "compatible_with": ["gcp-wp-001", "gcp-wp-003"],
+            "warranty": {"years": 15, "type": "system", "covers": ["water_intrusion"]},
+            "spec_section": "07 11 13",
+            "discontinued": false
+          },
+          {
+            "id": "gcp-wp-003",
+            "name": "Hydroduct 220",
+            "type": "protection_drainage",
+            "description": "Protection and drainage board for below-grade waterproofing",
+            "specifications": {
+              "core_thickness": "0.40 inch",
+              "compressive_strength": "10,000 psf",
+              "flow_rate": "8 gal/min/ft",
+              "filter_fabric": "non-woven geotextile",
+              "panel_size": "4 ft x 8 ft"
+            },
+            "compatible_with": ["gcp-wp-001", "gcp-wp-002"],
+            "warranty": {"years": 15, "type": "system", "covers": ["drainage_performance"]},
+            "spec_section": "07 11 13",
+            "discontinued": false
+          }
+        ]
+      }
+    ]
+  },
+  "assembly_configurator": {
+    "description": "Interactive assembly builder. Engineer selects assembly type, then configures each layer with compatible GCP products. System validates compatibility at every step.",
+    "configuration_flow": [
+      {
+        "step": 1,
+        "name": "Select Assembly Type",
+        "description": "Choose the building envelope system to configure",
+        "options": [
+          {"code": "EIF", "name": "Exterior Insulation & Finish System", "layers": 5},
+          {"code": "AWB", "name": "Air & Water Barrier", "layers": 4},
+          {"code": "FP", "name": "Fireproofing", "layers": 3},
+          {"code": "WP", "name": "Waterproofing", "layers": 5},
+          {"code": "CI", "name": "Continuous Insulation", "layers": 4},
+          {"code": "MULTI", "name": "Multi-System Assembly", "layers": "variable"}
+        ]
+      },
+      {
+        "step": 2,
+        "name": "Configure Substrate",
+        "description": "Define the substrate the assembly attaches to",
+        "substrate_types": [
+          {"type": "concrete", "label": "Cast-in-Place Concrete"},
+          {"type": "cmu", "label": "Concrete Masonry Unit (CMU)"},
+          {"type": "steel_stud", "label": "Steel Stud Framing"},
+          {"type": "wood_frame", "label": "Wood Frame"},
+          {"type": "structural_steel", "label": "Structural Steel"},
+          {"type": "metal_deck", "label": "Metal Deck"},
+          {"type": "gypsum_sheathing", "label": "Gypsum Sheathing"},
+          {"type": "plywood", "label": "Plywood Sheathing"}
+        ]
+      },
+      {
+        "step": 3,
+        "name": "Select Products per Layer",
+        "description": "For each layer in the assembly, select a GCP product. System shows only compatible products for each layer based on previous selections.",
+        "validation": {
+          "compatibility_check": "Each product selection validated against compatibility matrix",
+          "substrate_check": "Products validated against selected substrate type",
+          "completeness_check": "All required layers must have product selections"
+        }
+      },
+      {
+        "step": 4,
+        "name": "Specify Parameters",
+        "description": "Set thickness, coverage area, fire rating, and other assembly-specific parameters",
+        "parameter_types": [
+          {"name": "assembly_thickness", "unit": "inches", "description": "Total assembly thickness"},
+          {"name": "coverage_area", "unit": "square_feet", "description": "Total area of assembly"},
+          {"name": "fire_rating", "unit": "hours", "description": "Required fire rating (fireproofing only)"},
+          {"name": "r_value_target", "unit": "R-value", "description": "Target thermal resistance (insulation only)"},
+          {"name": "climate_zone", "unit": "ASHRAE zone", "description": "ASHRAE climate zone for code compliance"},
+          {"name": "wind_load", "unit": "psf", "description": "Design wind load for cladding attachment"}
+        ]
+      },
+      {
+        "step": 5,
+        "name": "Review & Validate",
+        "description": "Complete configuration review with kernel validation. Shows warranty coverage, specification compliance, and estimated material quantities.",
+        "outputs": {
+          "configuration_summary": "Full assembly description with all layers and products",
+          "warranty_scope": "Warranty coverage for each product and system warranty eligibility",
+          "specification_compliance": "CSI spec section mapping and compliance status",
+          "material_estimate": "Estimated quantities based on coverage area",
+          "cost_estimate": "Approximate material cost range (list pricing)",
+          "cad_integration": "Configuration parameters ready for SAINT_SHOP_DRAWINGS DXF generation"
+        }
+      }
+    ],
+    "compatibility_engine": {
+      "description": "Product compatibility validation ensures only valid assemblies can be configured",
+      "rules": [
+        {
+          "id": "CR-001",
+          "name": "Product-to-Product Compatibility",
+          "rule": "Each product in assembly must be in the compatible_with list of adjacent products",
+          "enforcement": "Invalid combinations blocked at selection time with explanation"
+        },
+        {
+          "id": "CR-002",
+          "name": "Substrate Compatibility",
+          "rule": "Base layer product must be compatible with selected substrate type",
+          "enforcement": "Incompatible substrates grayed out or warned"
+        },
+        {
+          "id": "CR-003",
+          "name": "Discontinued Product Block",
+          "rule": "Discontinued products cannot be used in new configurations",
+          "enforcement": "VR-SAINT-001 — rejected with replacement suggestion",
+          "kernel_rule": "VR-SAINT-001"
+        },
+        {
+          "id": "CR-004",
+          "name": "Warranty System Eligibility",
+          "rule": "System warranty requires ALL products in assembly to be GCP products from same system",
+          "enforcement": "VR-SAINT-002 — non-GCP products flagged, system warranty excluded"
+        },
+        {
+          "id": "CR-005",
+          "name": "Fire Rating Validation",
+          "rule": "Fireproofing thickness must meet or exceed required fire rating for specified structural member",
+          "enforcement": "Insufficient thickness blocked with minimum thickness displayed"
+        },
+        {
+          "id": "CR-006",
+          "name": "Climate Zone Compliance",
+          "rule": "Insulation R-value must meet ASHRAE minimum for specified climate zone",
+          "enforcement": "Non-compliant configurations warned with code-required minimum"
+        },
+        {
+          "id": "CR-007",
+          "name": "Application Temperature Range",
+          "rule": "Product application temperature ranges must overlap for field installation feasibility",
+          "enforcement": "Incompatible temperature ranges warned"
+        }
+      ]
+    }
+  },
+  "specification_compliance": {
+    "description": "Maps GCP products and assemblies to CSI MasterFormat specification sections for submittal and specification compliance.",
+    "csi_sections": [
+      {"section": "07 11 13", "title": "Bituminous Waterproofing", "products": ["gcp-wp-001", "gcp-wp-002"]},
+      {"section": "07 24 13", "title": "Polymer-Based EIFS", "products": ["gcp-eifs-001", "gcp-eifs-002", "gcp-eifs-003", "gcp-eifs-004"]},
+      {"section": "07 27 00", "title": "Air Barriers", "products": ["gcp-awb-001", "gcp-awb-002", "gcp-awb-003", "gcp-awb-004"]},
+      {"section": "07 81 00", "title": "Spray-Applied Fireproofing", "products": ["gcp-fp-001", "gcp-fp-002"]}
+    ],
+    "submittal_integration": {
+      "description": "Configured assemblies generate submittal data for SAINT_SUBMITTALS entity (Phase 3)",
+      "data_passed": ["product_data_sheets", "test_reports", "compatibility_letters", "warranty_letters", "installation_guides"]
+    }
+  },
+  "data_model": {
+    "configuration": {
+      "id": "uuid",
+      "project_id": "uuid — links to project",
+      "assembly_type": "EIF | AWB | FP | WP | CI | MULTI",
+      "substrate_type": "concrete | cmu | steel_stud | wood_frame | structural_steel | metal_deck | gypsum_sheathing | plywood",
+      "layers": "array — ordered list of product selections per layer",
+      "parameters": {
+        "assembly_thickness": "number — inches",
+        "coverage_area": "number — square feet",
+        "fire_rating": "number — hours (if applicable)",
+        "r_value_target": "number — R-value (if applicable)",
+        "climate_zone": "string — ASHRAE zone",
+        "wind_load": "number — psf (if applicable)"
+      },
+      "validation_result": {
+        "compatible": "boolean",
+        "warranty_eligible": "boolean — true if full GCP system warranty applies",
+        "spec_compliant": "boolean",
+        "issues": "array — any warnings or non-compliance items"
+      },
+      "material_estimate": {
+        "items": "array — product quantities and estimated costs",
+        "total_estimated_cost": "number — USD list price estimate"
+      },
+      "created_by": "uuid",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "status": "draft | validated | submitted_to_shop_drawings | archived",
+      "audit_trail": "array — append-only action log"
+    },
+    "product": {
+      "id": "string — gcp product ID",
+      "name": "string",
+      "type": "string — product type within category",
+      "category_id": "string — eifs | awb | fireproofing | waterproofing",
+      "specifications": "object — product-specific specs",
+      "compatible_with": "array — IDs of compatible products",
+      "warranty": "object — warranty details",
+      "spec_section": "string — CSI section number",
+      "discontinued": "boolean",
+      "discontinued_date": "ISO8601 | null",
+      "replacement_product_id": "string | null — suggested replacement if discontinued",
+      "data_sheet_url": "string — product data sheet",
+      "installation_guide_url": "string — installation instructions",
+      "test_reports": "array — relevant test report references"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic configuration data for demo mode. Nicole Calpin as gcp_engineer.",
+    "saved_configurations": [
+      {
+        "project": "One Liberty Place — Facade Restoration",
+        "assembly_type": "EIF",
+        "substrate": "concrete",
+        "products": ["Perma Finish EIF-220", "Gold Coat CI-100", "Dur-O-Wal Base Coat BC-200", "EIFS Adhesive ADH-50"],
+        "status": "validated",
+        "warranty_eligible": true,
+        "coverage_area": 45000,
+        "estimated_cost": 285000
+      },
+      {
+        "project": "Comcast Technology Center — Level 12 AWB",
+        "assembly_type": "AWB",
+        "substrate": "gypsum_sheathing",
+        "products": ["Perm-A-Barrier NPS", "Hydroduct 660", "Perm-A-Barrier Primer"],
+        "status": "submitted_to_shop_drawings",
+        "warranty_eligible": true,
+        "coverage_area": 22000,
+        "estimated_cost": 176000
+      },
+      {
+        "project": "Children's Hospital — Wing B Fireproofing",
+        "assembly_type": "FP",
+        "substrate": "structural_steel",
+        "products": ["Monokote MK-6/HY"],
+        "status": "draft",
+        "warranty_eligible": true,
+        "fire_rating": 2,
+        "coverage_area": 85000,
+        "estimated_cost": 340000
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/products", "description": "List all active products (filterable by category, type)"},
+      {"method": "GET", "path": "/api/products/:id", "description": "Get product details with full specifications"},
+      {"method": "GET", "path": "/api/products/:id/compatible", "description": "Get compatible products for a given product"},
+      {"method": "GET", "path": "/api/categories", "description": "List product categories"},
+      {"method": "POST", "path": "/api/configurations", "description": "Create new assembly configuration"},
+      {"method": "GET", "path": "/api/configurations/:id", "description": "Get configuration details"},
+      {"method": "PATCH", "path": "/api/configurations/:id", "description": "Update configuration (add/remove products, change parameters)"},
+      {"method": "POST", "path": "/api/configurations/:id/validate", "description": "Run full validation on configuration"},
+      {"method": "POST", "path": "/api/configurations/:id/estimate", "description": "Generate material and cost estimate"},
+      {"method": "POST", "path": "/api/configurations/:id/submit-to-drawings", "description": "Submit validated configuration to shop drawing pipeline"},
+      {"method": "GET", "path": "/api/spec-sections", "description": "List CSI spec sections with product mapping"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTProductConfig.jsx",
+    "description": "Interactive product configurator with step-by-step assembly builder. Product catalog browser with search and filter. Configuration validator with real-time compatibility feedback. Material estimator. All actions validated through kernel before execution.",
+    "exports": [
+      "SAINTProductConfig — main entity component (catalog + configurator + routing)",
+      "ProductCatalog — browsable product catalog with search, filter by category/type",
+      "ProductDetail — full product specifications, data sheets, compatibility info",
+      "AssemblyConfigurator — step-by-step assembly builder with layer-by-layer product selection",
+      "CompatibilityMatrix — visual compatibility display between products",
+      "ConfigurationValidator — real-time validation with compatibility, warranty, and code compliance feedback",
+      "MaterialEstimator — quantity and cost estimation based on coverage area",
+      "SavedConfigurations — list of saved configurations per project"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — VR-SAINT-001, VR-SAINT-002)",
+      "SAINTAuth (user identity, role)",
+      "SAINT_SHOP_DRAWINGS (submit configuration to drawing pipeline)"
+    ],
+    "views": {
+      "gcp_engineer": "Full access — configure assemblies, validate, estimate, submit to drawings",
+      "gcp_admin": "Full access — all engineer capabilities plus catalog management (add/edit/discontinue products)",
+      "sales_rep": "Read-only catalog — browse products, view specifications, no configuration",
+      "contractor": "Read-only catalog — browse products, view specifications, request product info"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained component loaded by SAINTShell entity loader. Compatibility engine runs client-side for instant feedback, kernel validates server-side before persistence."
+  }
+}

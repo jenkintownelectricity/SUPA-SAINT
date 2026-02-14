@@ -1,0 +1,407 @@
+{
+  "_lds": {
+    "uuid": "saint-opp-scraper-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T14:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 2,
+    "sequence": 2,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-002",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Opportunity Scraper",
+    "description": "Commercial development opportunity finder for GCP sales team. Scrapes public permit filings, planning board minutes, construction databases, and commercial real estate listings. Classifies opportunities using Groq LPU inference. Territory-filtered. Daily alert digest to assigned sales reps.",
+    "principle": "Surface commercial building envelope opportunities before competitors know about them. Territory-compliant. Every opportunity scored, classified, and assigned through kernel governance."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all opportunity actions via CHECK-THEN-ACT",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — sales_rep and gcp_admin can view/manage, gcp_engineer and contractor denied",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for territory assignment and data isolation"
+  },
+  "data_sources": {
+    "description": "Aggregated public and commercial data sources for opportunity discovery",
+    "sources": [
+      {
+        "id": "municipal_permits",
+        "name": "Municipal Building Permits",
+        "type": "scraper",
+        "frequency": "daily",
+        "description": "Building permit applications from municipal portals. Filtered for commercial projects >$500K with building envelope scope.",
+        "data_extracted": [
+          "permit_number",
+          "project_address",
+          "project_description",
+          "estimated_value",
+          "owner_name",
+          "contractor_name",
+          "architect_name",
+          "permit_type",
+          "filing_date",
+          "municipality"
+        ],
+        "filter_criteria": {
+          "project_type": "commercial",
+          "minimum_value": 500000,
+          "keywords": ["facade", "envelope", "EIFS", "curtain wall", "waterproofing", "fireproofing", "insulation", "air barrier", "cladding", "exterior", "restoration", "renovation"]
+        }
+      },
+      {
+        "id": "planning_boards",
+        "name": "Planning Board & Zoning Meetings",
+        "type": "scraper",
+        "frequency": "weekly",
+        "description": "Planning board agendas, minutes, and decisions for new commercial development approvals.",
+        "data_extracted": [
+          "meeting_date",
+          "agenda_item",
+          "project_name",
+          "project_address",
+          "developer_name",
+          "project_description",
+          "decision",
+          "square_footage",
+          "stories"
+        ],
+        "filter_criteria": {
+          "project_type": "commercial",
+          "minimum_sqft": 10000,
+          "decision": ["approved", "conditional_approval", "pending"]
+        }
+      },
+      {
+        "id": "dodge_reports",
+        "name": "Dodge Construction Data",
+        "type": "api",
+        "frequency": "daily",
+        "description": "Dodge/Gordian construction project reports. Pre-bid and bidding phase commercial projects.",
+        "data_extracted": [
+          "dodge_report_number",
+          "project_name",
+          "project_address",
+          "project_type",
+          "project_stage",
+          "estimated_value",
+          "bid_date",
+          "owner_name",
+          "architect_name",
+          "general_contractor",
+          "specifications"
+        ],
+        "filter_criteria": {
+          "stage": ["pre-bid", "bidding", "post-bid"],
+          "divisions": ["07 — Thermal & Moisture Protection", "09 — Finishes"],
+          "minimum_value": 250000
+        }
+      },
+      {
+        "id": "commercial_real_estate",
+        "name": "Commercial Real Estate Listings",
+        "type": "api",
+        "frequency": "weekly",
+        "description": "New commercial development listings from CoStar, LoopNet, and municipal economic development announcements.",
+        "data_extracted": [
+          "listing_id",
+          "property_address",
+          "property_type",
+          "development_status",
+          "developer_name",
+          "estimated_value",
+          "square_footage",
+          "stories",
+          "expected_start_date"
+        ],
+        "filter_criteria": {
+          "status": ["planned", "pre-development", "under_construction"],
+          "property_type": ["office", "mixed_use", "institutional", "healthcare", "hospitality", "industrial"]
+        }
+      }
+    ]
+  },
+  "ai_classification": {
+    "description": "Groq LPU-powered opportunity classification and scoring. Ultra-low latency inference for real-time scoring as opportunities are ingested.",
+    "provider": "Groq",
+    "model": "llama-3.1-70b-versatile",
+    "inference_target": "<100ms per classification",
+    "classification_schema": {
+      "opportunity_type": {
+        "values": ["new_construction", "renovation", "restoration", "addition", "conversion"],
+        "description": "Type of building envelope opportunity"
+      },
+      "envelope_scope": {
+        "values": ["EIFS", "air_water_barrier", "fireproofing", "waterproofing", "insulation", "curtain_wall", "cladding", "roofing", "sealants", "multi_system"],
+        "description": "Primary building envelope system involved"
+      },
+      "gcp_product_fit": {
+        "values": ["high", "medium", "low", "none"],
+        "description": "How well GCP products fit this opportunity's specifications",
+        "scoring_factors": [
+          "Specification mentions GCP/Saint-Gobain products",
+          "Assembly type matches GCP product lines",
+          "Project scale suitable for GCP partnership",
+          "Geographic proximity to GCP distribution"
+        ]
+      },
+      "urgency": {
+        "values": ["immediate", "near_term", "pipeline", "future"],
+        "thresholds": {
+          "immediate": "Bid due within 30 days",
+          "near_term": "Bid due within 90 days",
+          "pipeline": "Project start within 12 months",
+          "future": "Project start >12 months out"
+        }
+      },
+      "confidence": {
+        "range": "0-100",
+        "description": "AI confidence in classification accuracy"
+      }
+    },
+    "scoring_model": {
+      "description": "Composite opportunity score combining multiple factors",
+      "score_range": "0-100",
+      "weights": {
+        "project_value": 0.25,
+        "gcp_product_fit": 0.30,
+        "urgency": 0.15,
+        "territory_proximity": 0.10,
+        "contractor_relationship": 0.10,
+        "specification_alignment": 0.10
+      },
+      "thresholds": {
+        "hot": ">80 — immediate sales action",
+        "warm": "60-80 — queue for outreach",
+        "cool": "40-60 — monitor and nurture",
+        "cold": "<40 — archive, re-score monthly"
+      }
+    }
+  },
+  "territory_management": {
+    "description": "Opportunities automatically assigned to sales reps based on territory mapping. Territory compliance enforced by kernel.",
+    "assignment_rules": {
+      "primary": "Opportunity address → territory lookup → assigned rep",
+      "fallback": "Unassigned territory → gcp_admin queue for manual assignment",
+      "cross_territory": "Opportunity spanning multiple territories → escalate to gcp_admin (VR-SAINT-003)"
+    },
+    "territory_definition": {
+      "granularity": "ZIP code or county level",
+      "hierarchy": "Region → District → Territory",
+      "fields": ["territory_id", "territory_name", "assigned_rep_id", "zip_codes", "counties", "states"],
+      "exclusivity": "Each ZIP code belongs to exactly one territory — no overlap"
+    },
+    "kernel_enforcement": {
+      "rule": "VR-SAINT-003 Territory Compliance",
+      "behavior": "Sales rep can only view/manage opportunities in assigned territory",
+      "cross_territory_action": "ESCALATE to gcp_admin"
+    }
+  },
+  "alerts": {
+    "description": "Daily digest and real-time alerts for high-priority opportunities",
+    "channels": [
+      {
+        "type": "daily_digest",
+        "delivery": "Email + in-app notification",
+        "schedule": "6:00 AM local time, Mon-Fri",
+        "content": {
+          "new_opportunities": "Opportunities discovered since last digest",
+          "score_changes": "Opportunities with significant score changes",
+          "upcoming_bids": "Opportunities with bid dates in next 14 days",
+          "territory_summary": "Aggregate stats for rep's territory"
+        }
+      },
+      {
+        "type": "real_time",
+        "delivery": "Push notification + in-app",
+        "triggers": [
+          {"condition": "score >= 80", "label": "Hot opportunity detected"},
+          {"condition": "bid_date within 7 days", "label": "Bid deadline approaching"},
+          {"condition": "gcp_product_mentioned_in_spec", "label": "GCP product specified"},
+          {"condition": "existing_contractor_involved", "label": "Known contractor on project"}
+        ]
+      }
+    ],
+    "preferences": {
+      "configurable_per_rep": true,
+      "settings": ["alert_frequency", "minimum_score_threshold", "envelope_scope_filter", "value_range_filter"]
+    }
+  },
+  "data_model": {
+    "opportunity": {
+      "id": "uuid",
+      "source_id": "string — ID from original data source",
+      "source_type": "municipal_permits | planning_boards | dodge_reports | commercial_real_estate",
+      "project_name": "string",
+      "project_address": "string",
+      "project_city": "string",
+      "project_state": "string",
+      "project_zip": "string",
+      "latitude": "number",
+      "longitude": "number",
+      "estimated_value": "number — USD",
+      "square_footage": "number | null",
+      "stories": "integer | null",
+      "opportunity_type": "new_construction | renovation | restoration | addition | conversion",
+      "envelope_scope": "array — building envelope systems involved",
+      "gcp_product_fit": "high | medium | low | none",
+      "urgency": "immediate | near_term | pipeline | future",
+      "score": "number — 0-100 composite score",
+      "confidence": "number — 0-100 AI classification confidence",
+      "territory_id": "uuid — assigned territory",
+      "assigned_rep_id": "uuid — assigned sales rep",
+      "status": "new | contacted | qualified | proposal_sent | won | lost | archived",
+      "owner_name": "string | null",
+      "contractor_name": "string | null",
+      "architect_name": "string | null",
+      "bid_date": "ISO8601 | null",
+      "project_start_date": "ISO8601 | null",
+      "specifications_mentioned": "array — spec sections referencing building envelope",
+      "gcp_products_mentioned": "array — GCP products explicitly named in specs",
+      "notes": "string — sales rep notes",
+      "discovered_at": "ISO8601",
+      "last_scored_at": "ISO8601",
+      "last_activity_at": "ISO8601",
+      "audit_trail": "array — append-only action log"
+    },
+    "territory": {
+      "id": "uuid",
+      "name": "string",
+      "region": "string",
+      "district": "string",
+      "assigned_rep_id": "uuid",
+      "zip_codes": "array of strings",
+      "counties": "array of strings",
+      "states": "array of strings",
+      "active": "boolean",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic opportunity data for demo mode. Marcus Rivera as sales_rep.",
+    "territories": [
+      {
+        "name": "Greater Philadelphia",
+        "assigned_to": "Marcus Rivera",
+        "zip_range": "19000-19199",
+        "counties": ["Philadelphia", "Montgomery", "Delaware", "Chester", "Bucks"]
+      }
+    ],
+    "opportunities": [
+      {
+        "project_name": "University City Science Center — Phase 3",
+        "address": "3711 Market Street, Philadelphia, PA 19104",
+        "value": 28000000,
+        "type": "new_construction",
+        "scope": ["EIFS", "air_water_barrier", "insulation"],
+        "score": 92,
+        "urgency": "immediate",
+        "gcp_fit": "high",
+        "status": "contacted",
+        "source": "dodge_reports"
+      },
+      {
+        "project_name": "King of Prussia Town Center — Building D",
+        "address": "200 Main Street, King of Prussia, PA 19406",
+        "value": 15000000,
+        "type": "new_construction",
+        "scope": ["curtain_wall", "fireproofing", "waterproofing"],
+        "score": 78,
+        "urgency": "near_term",
+        "gcp_fit": "medium",
+        "status": "new",
+        "source": "planning_boards"
+      },
+      {
+        "project_name": "Thomas Jefferson University Hospital — Renovation",
+        "address": "111 S 11th Street, Philadelphia, PA 19107",
+        "value": 8500000,
+        "type": "renovation",
+        "scope": ["air_water_barrier", "insulation", "sealants"],
+        "score": 85,
+        "urgency": "near_term",
+        "gcp_fit": "high",
+        "status": "qualified",
+        "source": "municipal_permits"
+      },
+      {
+        "project_name": "Navy Yard — Building 101 Conversion",
+        "address": "4747 S Broad Street, Philadelphia, PA 19112",
+        "value": 22000000,
+        "type": "conversion",
+        "scope": ["EIFS", "waterproofing", "roofing"],
+        "score": 71,
+        "urgency": "pipeline",
+        "gcp_fit": "medium",
+        "status": "new",
+        "source": "commercial_real_estate"
+      },
+      {
+        "project_name": "Bryn Mawr Hospital — New Patient Tower",
+        "address": "130 S Bryn Mawr Avenue, Bryn Mawr, PA 19010",
+        "value": 45000000,
+        "type": "new_construction",
+        "scope": ["air_water_barrier", "fireproofing", "insulation", "cladding"],
+        "score": 95,
+        "urgency": "immediate",
+        "gcp_fit": "high",
+        "status": "proposal_sent",
+        "source": "dodge_reports"
+      }
+    ]
+  },
+  "backend": {
+    "scraper_runtime": {
+      "description": "Background scraping jobs run on schedule. Results ingested, classified, and scored before becoming visible to users.",
+      "scheduler": "Cron-based job scheduler (Railway)",
+      "job_types": [
+        {"name": "daily_permit_scrape", "schedule": "0 4 * * *", "sources": ["municipal_permits"]},
+        {"name": "daily_dodge_sync", "schedule": "0 5 * * *", "sources": ["dodge_reports"]},
+        {"name": "weekly_planning_scrape", "schedule": "0 3 * * 1", "sources": ["planning_boards"]},
+        {"name": "weekly_cre_sync", "schedule": "0 3 * * 3", "sources": ["commercial_real_estate"]},
+        {"name": "daily_rescore", "schedule": "0 6 * * *", "description": "Re-score all active opportunities with latest data"},
+        {"name": "daily_digest", "schedule": "0 10 * * 1-5", "description": "Generate and send daily digest emails"}
+      ]
+    },
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/opportunities", "description": "List opportunities (filtered by territory, status, score)"},
+      {"method": "GET", "path": "/api/opportunities/:id", "description": "Get opportunity details"},
+      {"method": "PATCH", "path": "/api/opportunities/:id", "description": "Update opportunity status/notes"},
+      {"method": "POST", "path": "/api/opportunities/:id/score", "description": "Trigger re-score for opportunity"},
+      {"method": "GET", "path": "/api/opportunities/digest", "description": "Get daily digest for current user's territory"},
+      {"method": "GET", "path": "/api/territories", "description": "List territories"},
+      {"method": "GET", "path": "/api/territories/:id/stats", "description": "Territory aggregate statistics"},
+      {"method": "POST", "path": "/api/scraper/trigger", "description": "Manually trigger scraper job (admin only)"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTOppScraper.jsx",
+    "description": "Opportunity management dashboard. Map view with territory overlay and opportunity pins. List view with filters and sorting. Detail view with scoring breakdown, classification, and activity timeline. Alert configuration panel. All actions validated through kernel before execution.",
+    "exports": [
+      "SAINTOppScraper — main entity component (dashboard + routing)",
+      "OpportunityMap — territory map with opportunity pins, color-coded by score",
+      "OpportunityList — filterable/sortable table of opportunities",
+      "OpportunityDetail — full detail view with scoring breakdown and activity timeline",
+      "OpportunityScoreCard — visual score breakdown with factor weights",
+      "TerritoryOverview — territory stats, coverage map, rep assignment",
+      "AlertSettings — per-rep notification preferences",
+      "DailyDigest — formatted digest view with actionable items"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context)",
+      "SAINTAuth (user identity, territory assignment)",
+      "Groq SDK (LPU classification)",
+      "Mapbox GL JS (territory and opportunity mapping)"
+    ],
+    "views": {
+      "sales_rep": "Territory-filtered — own opportunities, own territory stats, own alerts",
+      "gcp_admin": "Full access — all territories, all opportunities, scraper controls, territory management",
+      "gcp_engineer": "No access — kernel DENIES load_entity for this role",
+      "contractor": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Stateless component loaded by SAINTShell entity loader. Territory filtering enforced at kernel level, not UI level."
+  }
+}

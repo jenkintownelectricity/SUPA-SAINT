@@ -1,0 +1,335 @@
+{
+  "_lds": {
+    "uuid": "saint-boundaries-2026-001",
+    "type": "boundary_definition",
+    "version": "1.0.0",
+    "created": "2026-02-14T12:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 1,
+    "sequence": 2,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "PROJECT SAINT Boundaries",
+    "description": "Role-based permission boundaries for the GCP/Saint-Gobain Super App. Defines what each role CAN do, CANNOT do, and what ESCALATES.",
+    "principle": "Whitelist architecture. If it's not explicitly allowed, it's denied. No exceptions."
+  },
+  "roles": {
+    "gcp_admin": {
+      "label": "GCP Administrator",
+      "description": "Saint-Gobain internal — full platform management",
+      "icon": "Shield",
+      "color": "#1E40AF",
+      "allowed": [
+        "manage_users",
+        "manage_roles",
+        "manage_branding",
+        "view_all_tools",
+        "configure_tools",
+        "deploy_tools",
+        "view_all_reports",
+        "export_reports",
+        "manage_api_keys",
+        "manage_integrations",
+        "manage_billing",
+        "manage_subscriptions",
+        "create_shop_drawing",
+        "edit_shop_drawing",
+        "review_shop_drawing",
+        "upload_assembly_letter",
+        "parse_assembly_letter",
+        "configure_product",
+        "view_product_catalog",
+        "view_warranty_status",
+        "create_warranty_claim",
+        "manage_submittals",
+        "review_submittals",
+        "view_opportunities",
+        "score_opportunities",
+        "assign_opportunities",
+        "manage_pipeline",
+        "view_territories",
+        "manage_territories",
+        "generate_reports",
+        "view_contractor_dashboard",
+        "view_all_projects",
+        "system_settings"
+      ],
+      "denied": [
+        {
+          "action": "modify_kernel",
+          "reason": "L0 authority only — kernel is immutable at runtime"
+        },
+        {
+          "action": "modify_invariants",
+          "reason": "L0 authority only — invariants are non-negotiable"
+        },
+        {
+          "action": "delete_audit_logs",
+          "reason": "Audit logs are immutable (IV.07 Monotonic State)"
+        },
+        {
+          "action": "bypass_validation",
+          "reason": "All actions must pass through L1 kernel"
+        }
+      ],
+      "escalation": [
+        {
+          "condition": "billing_change_exceeds_threshold",
+          "threshold": 10000,
+          "unit": "USD/month",
+          "escalate_to": "L0_governance",
+          "reason": "Large billing changes require human governance approval"
+        },
+        {
+          "condition": "new_integration_request",
+          "escalate_to": "L0_governance",
+          "reason": "New integrations require security review"
+        }
+      ]
+    },
+    "gcp_engineer": {
+      "label": "GCP Design Engineer",
+      "description": "Nicole Calpin's role — engineering tools, shop drawings, product configuration",
+      "icon": "Drafting Compass",
+      "color": "#059669",
+      "allowed": [
+        "create_shop_drawing",
+        "edit_shop_drawing",
+        "review_shop_drawing",
+        "upload_assembly_letter",
+        "parse_assembly_letter",
+        "configure_product",
+        "view_product_catalog",
+        "view_warranty_status",
+        "create_warranty_claim",
+        "manage_submittals",
+        "review_submittals",
+        "view_own_reports",
+        "download_shop_drawings",
+        "view_own_dashboard",
+        "view_assigned_projects",
+        "generate_dxf",
+        "validate_cad_standards",
+        "view_material_schedule"
+      ],
+      "denied": [
+        {
+          "action": "manage_users",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "manage_roles",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "view_sales_pipeline",
+          "reason": "Sales team data — not engineering scope"
+        },
+        {
+          "action": "view_territories",
+          "reason": "Sales team data — not engineering scope"
+        },
+        {
+          "action": "manage_billing",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "manage_api_keys",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "modify_branding",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "view_other_engineers_data",
+          "reason": "Data isolation — own projects only"
+        }
+      ],
+      "escalation": [
+        {
+          "condition": "warranty_claim_exceeds_threshold",
+          "threshold": 50000,
+          "unit": "USD",
+          "escalate_to": "gcp_admin",
+          "reason": "Large warranty claims require admin approval"
+        },
+        {
+          "condition": "product_config_override",
+          "escalate_to": "gcp_admin",
+          "reason": "Overriding standard product configuration requires admin approval"
+        },
+        {
+          "condition": "non_standard_cad_layer",
+          "escalate_to": "gcp_admin",
+          "reason": "Non-standard CAD layers require approval to maintain drawing consistency"
+        }
+      ]
+    },
+    "sales_rep": {
+      "label": "Sales Representative",
+      "description": "GCP sales team — opportunity management, pipeline, territory",
+      "icon": "TrendingUp",
+      "color": "#D97706",
+      "allowed": [
+        "view_opportunities",
+        "score_opportunities",
+        "assign_opportunities",
+        "manage_own_pipeline",
+        "update_deal_status",
+        "view_own_territory",
+        "request_territory_change",
+        "view_contractor_list",
+        "contact_contractor",
+        "generate_sales_reports",
+        "view_dashboards",
+        "request_product_sample",
+        "view_product_catalog",
+        "schedule_demo",
+        "log_activity",
+        "view_own_reports"
+      ],
+      "denied": [
+        {
+          "action": "create_shop_drawing",
+          "reason": "Engineering function — not sales scope"
+        },
+        {
+          "action": "edit_shop_drawing",
+          "reason": "Engineering function — not sales scope"
+        },
+        {
+          "action": "manage_warranty",
+          "reason": "Engineering function — not sales scope"
+        },
+        {
+          "action": "manage_submittals",
+          "reason": "Engineering function — not sales scope"
+        },
+        {
+          "action": "manage_users",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "manage_billing",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "configure_products",
+          "reason": "Engineering function — not sales scope"
+        },
+        {
+          "action": "view_other_reps_pipeline",
+          "reason": "Data isolation — own pipeline only"
+        }
+      ],
+      "escalation": [
+        {
+          "condition": "deal_exceeds_threshold",
+          "threshold": 500000,
+          "unit": "USD",
+          "escalate_to": "gcp_admin",
+          "reason": "Large deals require admin visibility"
+        },
+        {
+          "condition": "territory_reassignment",
+          "escalate_to": "gcp_admin",
+          "reason": "Territory changes require admin approval"
+        },
+        {
+          "condition": "cross_territory_opportunity",
+          "escalate_to": "gcp_admin",
+          "reason": "Cross-territory actions require admin mediation"
+        }
+      ]
+    },
+    "contractor": {
+      "label": "Contractor",
+      "description": "Building envelope contractor — project access, submittals, warranty status",
+      "icon": "HardHat",
+      "color": "#7C3AED",
+      "allowed": [
+        "view_own_dashboard",
+        "view_own_projects",
+        "download_shop_drawings",
+        "view_warranty_status",
+        "submit_warranty_claim",
+        "view_product_catalog",
+        "request_product_info",
+        "update_project_status",
+        "upload_field_photos",
+        "view_own_submittals",
+        "request_submittal_review",
+        "view_installation_guides",
+        "contact_gcp_engineer"
+      ],
+      "denied": [
+        {
+          "action": "create_shop_drawing",
+          "reason": "GCP engineers only"
+        },
+        {
+          "action": "edit_shop_drawing",
+          "reason": "GCP engineers only"
+        },
+        {
+          "action": "view_other_contractors_data",
+          "reason": "Data isolation — strict tenant boundary"
+        },
+        {
+          "action": "manage_users",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "manage_billing",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "view_opportunities",
+          "reason": "Sales team data — not contractor scope"
+        },
+        {
+          "action": "view_pipeline",
+          "reason": "Sales team data — not contractor scope"
+        },
+        {
+          "action": "modify_system_config",
+          "reason": "Admin-only function"
+        },
+        {
+          "action": "configure_products",
+          "reason": "Engineering function"
+        }
+      ],
+      "escalation": [
+        {
+          "condition": "warranty_claim_dispute",
+          "escalate_to": "gcp_engineer",
+          "reason": "Warranty disputes require engineering review"
+        },
+        {
+          "condition": "project_scope_change",
+          "escalate_to": "gcp_engineer",
+          "reason": "Scope changes affect shop drawings and product specs"
+        },
+        {
+          "condition": "installation_deviation",
+          "escalate_to": "gcp_engineer",
+          "reason": "Deviations from spec require engineering approval"
+        }
+      ]
+    }
+  },
+  "global_rules": {
+    "data_isolation": "Each role sees only data explicitly granted. No cross-tenant, no cross-role data leakage.",
+    "audit_all": "Every permission check is logged regardless of result (ALLOWED, DENIED, ESCALATE).",
+    "fail_closed": "If boundary lookup fails for any reason, action is DENIED.",
+    "no_self_elevation": "No role can modify its own permissions or grant itself higher access.",
+    "immutable_at_runtime": "Boundary definitions are frozen after kernel initialization. Changes require L0 command."
+  }
+}

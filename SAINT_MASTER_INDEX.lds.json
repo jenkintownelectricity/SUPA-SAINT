@@ -1,0 +1,158 @@
+{
+  "_lds": {
+    "uuid": "saint-master-2026-001",
+    "type": "application_manifest",
+    "version": "1.0.0",
+    "created": "2026-02-14T12:00:00Z",
+    "authority": "L0_GOVERNANCE",
+    "content_hash": "pending_on_completion",
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "PROJECT SAINT",
+    "tagline": "Unified GCP/Saint-Gobain Contractor Tools Platform",
+    "description": "Complete building envelope contractor platform built on LDS streaming architecture. White-label ready. Kernel-governed. Intelligence lives in data, not models.",
+    "version": "1.0.0",
+    "target_users": ["gcp_admin", "gcp_engineer", "sales_rep", "contractor"],
+    "partner": {
+      "name": "Saint-Gobain / GCP Applied Technologies",
+      "contacts": {
+        "engineering": "Nicole Calpin, Design Engineer, 267-275-3870",
+        "compliance": "Keith Berg, Manager Warranty & Compliance, 610-893-5225"
+      }
+    }
+  },
+  "architecture": {
+    "pattern": "LDS_STREAMING",
+    "principles": [
+      "Stateless UI shell — buttons, forms, display only",
+      "Entity-driven rendering — .lds.json defines everything",
+      "On-demand loading — only current screen entities in memory",
+      "L1 Kernel validation — CHECK-THEN-ACT on every action",
+      "Deterministic boundaries — same input = same output",
+      "White-label ready — branding via config entity swap"
+    ],
+    "data_flow": "User Action → L1 Kernel Check → If ALLOWED → Load Entity → Render → Execute",
+    "trust_hierarchy": {
+      "L0": "Human Governance (Armand Lefebvre) — sets policy, approves scope",
+      "L1": "SAINT Kernel — validates invariants, enforces policy",
+      "L2": "Proposers (AI agents, users) — requests execution within bounds",
+      "L3": "Executors — atomic workers, no authority"
+    }
+  },
+  "entity_manifest": {
+    "build_sequence": [
+      {
+        "phase": 1,
+        "name": "FOUNDATION",
+        "entities": [
+          "SAINT_KERNEL.lds.json",
+          "SAINT_BOUNDARIES.lds.json",
+          "SAINT_SHELL.lds.json",
+          "SAINT_AUTH.lds.json"
+        ],
+        "description": "Core kernel, role boundaries, app shell, authentication",
+        "l0_command": "L0-CMD-2026-0214-001"
+      },
+      {
+        "phase": 2,
+        "name": "GCP_TOOLS",
+        "entities": [
+          "SAINT_SHOP_DRAWINGS.lds.json",
+          "SAINT_OPP_SCRAPER.lds.json",
+          "SAINT_PRODUCT_CONFIG.lds.json"
+        ],
+        "description": "Shop drawing automation, opportunity finder, GCP product configurator",
+        "l0_command": "L0-CMD-2026-0214-002 (TBD)",
+        "depends_on": ["SAINT_KERNEL", "SAINT_BOUNDARIES", "SAINT_SHELL", "SAINT_AUTH"]
+      },
+      {
+        "phase": 3,
+        "name": "CONTRACTOR_PORTAL",
+        "entities": [
+          "SAINT_CONTRACTOR_DASH.lds.json",
+          "SAINT_WARRANTY.lds.json",
+          "SAINT_SUBMITTALS.lds.json"
+        ],
+        "description": "Contractor dashboard, warranty tracking, submittal management",
+        "l0_command": "L0-CMD-2026-0214-003 (TBD)",
+        "depends_on": ["Phase 1", "Phase 2"]
+      },
+      {
+        "phase": 4,
+        "name": "SALES_CRM",
+        "entities": [
+          "SAINT_PIPELINE.lds.json",
+          "SAINT_TERRITORIES.lds.json",
+          "SAINT_REPORTING.lds.json"
+        ],
+        "description": "Sales pipeline, territory management, analytics & reporting",
+        "l0_command": "L0-CMD-2026-0214-004 (TBD)",
+        "depends_on": ["Phase 1", "Phase 2"]
+      },
+      {
+        "phase": 5,
+        "name": "ENTERPRISE",
+        "entities": [
+          "SAINT_WHITE_LABEL.lds.json",
+          "SAINT_SSO.lds.json",
+          "SAINT_API.lds.json"
+        ],
+        "description": "White-label branding engine, enterprise SSO, external API layer",
+        "l0_command": "L0-CMD-2026-0214-005 (TBD)",
+        "depends_on": ["Phase 1 through 4"]
+      },
+      {
+        "phase": 6,
+        "name": "OPERATIONS",
+        "entities": [
+          "SAINT_ADMIN.lds.json",
+          "SAINT_BILLING.lds.json",
+          "SAINT_INTEGRATIONS.lds.json"
+        ],
+        "description": "Admin console, subscription management, third-party integrations",
+        "l0_command": "L0-CMD-2026-0214-006 (TBD)",
+        "depends_on": ["Phase 1 through 5"]
+      }
+    ]
+  },
+  "deployment": {
+    "target": "Railway (backend) + Vercel (frontend)",
+    "preferred": "All-Railway when possible",
+    "domains": {
+      "production": "saint.validkernel.com (TBD)",
+      "staging": "saint-staging.validkernel.com (TBD)",
+      "white_label": "{client}.validkernel.com (configurable)"
+    }
+  },
+  "pricing_model": {
+    "strategy": "Premium only — no free tier",
+    "tiers": [
+      {
+        "name": "Contractor",
+        "price": "$500/month",
+        "includes": "Dashboard, submittals, warranty tracking, product lookup"
+      },
+      {
+        "name": "GCP Engineer",
+        "price": "$2,000/month",
+        "includes": "All contractor tools + shop drawings + product config"
+      },
+      {
+        "name": "Sales Team",
+        "price": "$3,000/month",
+        "includes": "Opportunity scraper + pipeline + territory + reporting"
+      },
+      {
+        "name": "Enterprise",
+        "price": "$15,000/month",
+        "includes": "Full platform + white label + SSO + API + dedicated support"
+      }
+    ],
+    "note": "Expedited/emergency work billed at 150-200% of standard rate"
+  }
+}
