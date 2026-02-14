@@ -1,0 +1,303 @@
+{
+  "_lds": {
+    "uuid": "saint-integrations-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T22:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 6,
+    "sequence": 3,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-006",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Integrations",
+    "description": "Third-party integration management for PROJECT SAINT. Pre-built connectors for construction and enterprise platforms. Custom integration builder using the SAINT API. Integration health monitoring and sync status tracking.",
+    "principle": "Integrations extend SAINT's reach but not its authority. All data flowing through integrations passes through kernel validation. External systems cannot bypass role boundaries or data isolation."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — integration data flows validated by kernel",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — integration permissions scoped to configured role",
+    "api": "SAINT_API.lds.json — integrations use the SAINT API layer for data exchange",
+    "auth": "SAINT_AUTH.lds.json — integration authentication and authorization"
+  },
+  "pre_built_connectors": {
+    "description": "Ready-to-configure connectors for common construction and enterprise platforms",
+    "connectors": [
+      {
+        "id": "salesforce",
+        "name": "Salesforce CRM",
+        "category": "crm",
+        "description": "Bi-directional sync between SAINT pipeline and Salesforce opportunities. Push deal updates to Salesforce, pull contact data and account info.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "SAINT_PIPELINE", "external_object": "Opportunity", "fields": ["deal_name→Name", "value→Amount", "stage→StageName", "close_date→CloseDate"]},
+          {"direction": "external_to_saint", "entity": "SAINT_PIPELINE", "external_object": "Contact", "fields": ["Name→contact_name", "Email→contact_email", "Phone→contact_phone"]},
+          {"direction": "external_to_saint", "entity": "SAINT_PIPELINE", "external_object": "Account", "fields": ["Name→company_name", "BillingAddress→project_address"]}
+        ],
+        "sync_frequency": "Real-time (webhook) + hourly reconciliation",
+        "auth_method": "OAuth 2.0"
+      },
+      {
+        "id": "procore",
+        "name": "Procore",
+        "category": "construction_management",
+        "description": "Sync projects, submittals, and RFIs between SAINT and Procore. Push SAINT submittals to Procore, pull project data and drawing logs.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "SAINT_SUBMITTALS", "external_object": "Submittal", "fields": ["package_number→number", "title→title", "status→status.name", "documents→attachments"]},
+          {"direction": "external_to_saint", "entity": "SAINT_CONTRACTOR_DASH", "external_object": "Project", "fields": ["name→project_name", "address→project_address", "status→status"]},
+          {"direction": "external_to_saint", "entity": "SAINT_SHOP_DRAWINGS", "external_object": "Drawing Log", "fields": ["number→drawing_number", "revision→revision"]}
+        ],
+        "sync_frequency": "Every 15 minutes",
+        "auth_method": "OAuth 2.0"
+      },
+      {
+        "id": "plangrid",
+        "name": "PlanGrid (Autodesk Build)",
+        "category": "construction_management",
+        "description": "Push shop drawings to PlanGrid for field access. Sync drawing versions and markups.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "SAINT_SHOP_DRAWINGS", "external_object": "Sheet", "fields": ["dxf_url→file", "drawing_number→number", "revision→version", "title→name"]},
+          {"direction": "external_to_saint", "entity": "SAINT_SHOP_DRAWINGS", "external_object": "Annotation", "fields": ["text→markup_notes", "created_by→reviewer"]}
+        ],
+        "sync_frequency": "On drawing approval (event-driven)",
+        "auth_method": "OAuth 2.0"
+      },
+      {
+        "id": "bluebeam",
+        "name": "Bluebeam Revu",
+        "category": "document_management",
+        "description": "Export shop drawings and submittals to Bluebeam Studio for collaborative markup. Import markup sessions back to SAINT.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "SAINT_SHOP_DRAWINGS", "external_object": "PDF Export", "fields": ["pdf_url→file"]},
+          {"direction": "saint_to_external", "entity": "SAINT_SUBMITTALS", "external_object": "PDF Package", "fields": ["compiled_package_url→file"]},
+          {"direction": "external_to_saint", "entity": "SAINT_SHOP_DRAWINGS", "external_object": "Markup Summary", "fields": ["markups→review_notes"]}
+        ],
+        "sync_frequency": "Manual push/pull",
+        "auth_method": "API Key"
+      },
+      {
+        "id": "microsoft_365",
+        "name": "Microsoft 365",
+        "category": "productivity",
+        "description": "Calendar sync for project milestones, email integration for notifications, SharePoint for document storage.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "SAINT_PIPELINE", "external_object": "Outlook Calendar", "fields": ["expected_close_date→event_date", "deal_name→event_title"]},
+          {"direction": "saint_to_external", "entity": "All notifications", "external_object": "Outlook Email", "fields": ["notification→email"]},
+          {"direction": "both", "entity": "SAINT_SHOP_DRAWINGS", "external_object": "SharePoint", "fields": ["files→document_library"]}
+        ],
+        "sync_frequency": "Real-time for calendar/email, hourly for SharePoint",
+        "auth_method": "OAuth 2.0 (Microsoft identity platform)"
+      },
+      {
+        "id": "quickbooks",
+        "name": "QuickBooks Online",
+        "category": "accounting",
+        "description": "Push SAINT invoices and billing data to QuickBooks for accounting. Sync customer records.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "SAINT_BILLING", "external_object": "Invoice", "fields": ["total→TotalAmt", "line_items→Line", "customer→CustomerRef"]},
+          {"direction": "both", "entity": "SAINT_BILLING", "external_object": "Customer", "fields": ["tenant_name→DisplayName", "email→PrimaryEmailAddr"]}
+        ],
+        "sync_frequency": "On invoice generation",
+        "auth_method": "OAuth 2.0"
+      },
+      {
+        "id": "slack",
+        "name": "Slack",
+        "category": "communication",
+        "description": "Push SAINT notifications and alerts to Slack channels. Bot commands for quick status checks.",
+        "data_flows": [
+          {"direction": "saint_to_external", "entity": "All entities", "external_object": "Channel Message", "fields": ["notification→message_text"]},
+          {"direction": "external_to_saint", "entity": "SAINT_PIPELINE", "external_object": "Bot Command", "fields": ["/saint-pipeline→pipeline_summary"]}
+        ],
+        "sync_frequency": "Real-time (webhook)",
+        "auth_method": "OAuth 2.0 (Slack App)"
+      }
+    ]
+  },
+  "integration_management": {
+    "operations": [
+      {
+        "operation": "configure_integration",
+        "description": "Set up a pre-built connector with credentials and field mapping",
+        "allowed_roles": ["gcp_admin"],
+        "steps": ["Select connector", "Authenticate with external service", "Configure field mapping", "Set sync frequency", "Test connection", "Activate"]
+      },
+      {
+        "operation": "edit_integration",
+        "description": "Modify field mapping, sync frequency, or credentials",
+        "allowed_roles": ["gcp_admin"]
+      },
+      {
+        "operation": "pause_integration",
+        "description": "Temporarily pause sync without deleting configuration",
+        "allowed_roles": ["gcp_admin"]
+      },
+      {
+        "operation": "delete_integration",
+        "description": "Remove integration and revoke external credentials",
+        "allowed_roles": ["gcp_admin"],
+        "confirmation": "Requires explicit confirmation — data in external system not affected"
+      },
+      {
+        "operation": "test_integration",
+        "description": "Run test sync to verify configuration without affecting production data",
+        "allowed_roles": ["gcp_admin"],
+        "output": "Test result with sample data preview and any errors"
+      },
+      {
+        "operation": "view_sync_log",
+        "description": "View sync history with success/failure details",
+        "allowed_roles": ["gcp_admin"]
+      }
+    ]
+  },
+  "custom_integrations": {
+    "description": "Build custom integrations using the SAINT API and webhooks",
+    "approach": {
+      "api_based": "Use SAINT_API endpoints to read/write data programmatically",
+      "webhook_based": "Subscribe to SAINT webhook events for real-time notifications",
+      "combined": "Use webhooks for triggers and API for data operations"
+    },
+    "developer_tools": {
+      "api_docs": "Interactive API documentation from SAINT_API entity",
+      "webhook_tester": "Test webhook delivery and payload format",
+      "sandbox": "Test API key for development without affecting production data",
+      "rate_limits": "Development keys use standard rate limiting"
+    }
+  },
+  "health_monitoring": {
+    "description": "Monitor integration health and sync status",
+    "metrics_per_integration": [
+      {"metric": "sync_status", "values": ["healthy", "degraded", "error", "paused"]},
+      {"metric": "last_sync_at", "description": "Timestamp of last successful sync"},
+      {"metric": "records_synced", "description": "Count of records synced in last 24 hours"},
+      {"metric": "error_count", "description": "Sync errors in last 24 hours"},
+      {"metric": "avg_sync_latency_ms", "description": "Average sync operation duration"},
+      {"metric": "consecutive_failures", "description": "Number of consecutive sync failures"}
+    ],
+    "alerts": [
+      {"condition": "consecutive_failures >= 3", "action": "Notify admin, pause integration"},
+      {"condition": "sync_latency > 30s", "action": "Warn admin of slow sync"},
+      {"condition": "auth_expired", "action": "Notify admin to re-authenticate"}
+    ]
+  },
+  "data_model": {
+    "integration_config": {
+      "id": "uuid",
+      "connector_id": "string — pre-built connector ID or 'custom'",
+      "name": "string — display name",
+      "description": "string",
+      "external_service": "string",
+      "auth_method": "oauth2 | api_key | basic",
+      "credentials_encrypted": "object — encrypted OAuth tokens or API keys",
+      "field_mapping": "object — SAINT field → external field mapping",
+      "sync_frequency": "string — real_time | 15min | hourly | daily | manual",
+      "sync_direction": "inbound | outbound | bidirectional",
+      "status": "active | paused | error | configuring",
+      "last_sync_at": "ISO8601 | null",
+      "last_error": "string | null",
+      "error_count_24h": "integer",
+      "consecutive_failures": "integer",
+      "created_by": "uuid",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "audit_trail": "array"
+    },
+    "sync_log": {
+      "id": "uuid",
+      "integration_id": "uuid",
+      "direction": "inbound | outbound",
+      "records_processed": "integer",
+      "records_succeeded": "integer",
+      "records_failed": "integer",
+      "errors": "array — error details for failed records",
+      "duration_ms": "integer",
+      "started_at": "ISO8601",
+      "completed_at": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic integration data for demo mode.",
+    "integrations": [
+      {
+        "name": "Salesforce — GCP CRM",
+        "connector": "salesforce",
+        "status": "active",
+        "last_sync": "5 minutes ago",
+        "records_synced_24h": 47,
+        "errors_24h": 0
+      },
+      {
+        "name": "Procore — Project Sync",
+        "connector": "procore",
+        "status": "active",
+        "last_sync": "12 minutes ago",
+        "records_synced_24h": 23,
+        "errors_24h": 1
+      },
+      {
+        "name": "Slack — Team Notifications",
+        "connector": "slack",
+        "status": "active",
+        "last_sync": "real-time",
+        "records_synced_24h": 156,
+        "errors_24h": 0
+      },
+      {
+        "name": "Bluebeam — Drawing Review",
+        "connector": "bluebeam",
+        "status": "paused",
+        "last_sync": "3 days ago",
+        "records_synced_24h": 0,
+        "errors_24h": 0
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/integrations", "description": "List configured integrations"},
+      {"method": "POST", "path": "/api/integrations", "description": "Create new integration"},
+      {"method": "GET", "path": "/api/integrations/:id", "description": "Get integration detail"},
+      {"method": "PATCH", "path": "/api/integrations/:id", "description": "Update integration config"},
+      {"method": "DELETE", "path": "/api/integrations/:id", "description": "Delete integration"},
+      {"method": "POST", "path": "/api/integrations/:id/test", "description": "Test integration connection"},
+      {"method": "POST", "path": "/api/integrations/:id/sync", "description": "Trigger manual sync"},
+      {"method": "POST", "path": "/api/integrations/:id/pause", "description": "Pause integration"},
+      {"method": "POST", "path": "/api/integrations/:id/resume", "description": "Resume paused integration"},
+      {"method": "GET", "path": "/api/integrations/:id/logs", "description": "Get sync logs for integration"},
+      {"method": "GET", "path": "/api/integrations/connectors", "description": "List available pre-built connectors"},
+      {"method": "GET", "path": "/api/integrations/health", "description": "Get health status for all integrations"},
+      {"method": "POST", "path": "/api/integrations/:id/reauth", "description": "Re-authenticate with external service"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTIntegrations.jsx",
+    "description": "Integration management interface. Connector catalog with setup wizard. Active integration list with health status. Sync log viewer. Field mapping editor. All admin-only.",
+    "exports": [
+      "SAINTIntegrations — main entity component (integration management + routing)",
+      "ConnectorCatalog — grid of available pre-built connectors with descriptions",
+      "IntegrationSetupWizard — step-by-step connector configuration (auth, mapping, frequency, test, activate)",
+      "IntegrationList — active integrations with health status badges",
+      "IntegrationDetail — full integration view with config, mapping, sync logs, health metrics",
+      "FieldMappingEditor — visual field mapping between SAINT and external service",
+      "SyncLogViewer — sync history with success/failure details and error drill-down",
+      "IntegrationHealthDashboard — overview of all integration health metrics",
+      "CustomIntegrationGuide — developer documentation for building custom integrations"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — integration data flows validated)",
+      "SAINTAuth (admin-only access)",
+      "SAINT_API (custom integrations use API layer)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — configure, monitor, and manage all integrations",
+      "gcp_engineer": "No access — kernel DENIES",
+      "sales_rep": "No access — kernel DENIES",
+      "contractor": "No access — kernel DENIES"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Integrations use SAINT_API for data exchange — kernel validates all data flowing through integrations."
+  }
+}

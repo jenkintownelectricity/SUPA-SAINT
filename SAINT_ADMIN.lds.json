@@ -1,0 +1,268 @@
+{
+  "_lds": {
+    "uuid": "saint-admin-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T22:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 6,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-006",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Admin Console",
+    "description": "Platform administration console. User management, role assignment, system settings, audit log viewer, platform health monitoring, and entity status. Central control panel for gcp_admin to manage the entire SAINT platform.",
+    "principle": "Admin manages users and settings. Admin does NOT manage the kernel. Kernel behavior, invariants, and boundary definitions are L0-only. Admin operates within the boundaries defined by L0 governance."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — admin actions validated like all others",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — gcp_admin role permissions",
+    "auth": "SAINT_AUTH.lds.json — user accounts and sessions",
+    "all_entities": "Admin console monitors status of all entities"
+  },
+  "user_management": {
+    "description": "Create, modify, and deactivate user accounts. Assign roles.",
+    "operations": [
+      {
+        "operation": "create_user",
+        "description": "Create new user account with role assignment",
+        "fields": ["email", "first_name", "last_name", "role", "territory_id (if sales_rep)", "contractor_id (if contractor)"],
+        "validation": ["Email unique", "Role must be valid SAINT role", "Territory/contractor must exist if applicable"],
+        "post_action": "Send invitation email via Clerk"
+      },
+      {
+        "operation": "edit_user",
+        "description": "Modify user profile, role, or assignments",
+        "fields": ["first_name", "last_name", "role", "territory_id", "contractor_id", "active"],
+        "restrictions": ["Cannot change own role (IV.03 Separation of Powers)", "Role change requires re-evaluation of all active sessions"]
+      },
+      {
+        "operation": "deactivate_user",
+        "description": "Soft deactivation — user cannot log in but data preserved",
+        "behavior": "Active sessions terminated, login blocked, data retained for audit compliance"
+      },
+      {
+        "operation": "reactivate_user",
+        "description": "Restore deactivated user account",
+        "behavior": "Login re-enabled, role and assignments restored"
+      },
+      {
+        "operation": "reset_password",
+        "description": "Trigger password reset flow via Clerk",
+        "behavior": "Reset email sent to user, existing sessions preserved until password changed"
+      },
+      {
+        "operation": "view_user_activity",
+        "description": "View user's action history from kernel audit log",
+        "data_source": "SAINT_KERNEL audit log filtered by user ID"
+      }
+    ],
+    "user_list": {
+      "columns": ["name", "email", "role", "status", "last_login", "created_at"],
+      "filters": ["role", "status", "search_by_name_or_email"],
+      "sort": ["name", "role", "last_login", "created_at"],
+      "bulk_actions": ["deactivate_selected", "export_list"]
+    }
+  },
+  "system_settings": {
+    "description": "Platform-wide configuration settings",
+    "setting_groups": [
+      {
+        "group": "general",
+        "name": "General Settings",
+        "settings": [
+          {"key": "platform_name", "type": "string", "default": "PROJECT SAINT", "description": "Platform display name"},
+          {"key": "timezone", "type": "timezone", "default": "America/New_York", "description": "Default timezone for reports and schedules"},
+          {"key": "date_format", "type": "select", "default": "MM/DD/YYYY", "options": ["MM/DD/YYYY", "DD/MM/YYYY", "YYYY-MM-DD"]},
+          {"key": "currency", "type": "select", "default": "USD", "options": ["USD", "CAD", "EUR", "GBP"]}
+        ]
+      },
+      {
+        "group": "security",
+        "name": "Security Settings",
+        "settings": [
+          {"key": "session_timeout_minutes", "type": "integer", "default": 480, "description": "Session timeout in minutes"},
+          {"key": "idle_timeout_minutes", "type": "integer", "default": 30, "description": "Idle timeout in minutes"},
+          {"key": "mfa_required", "type": "boolean", "default": false, "description": "Require MFA for all users"},
+          {"key": "password_min_length", "type": "integer", "default": 8, "description": "Minimum password length"},
+          {"key": "ip_whitelist_enabled", "type": "boolean", "default": false, "description": "Restrict access to whitelisted IPs"},
+          {"key": "ip_whitelist", "type": "array", "default": [], "description": "Allowed IP addresses/CIDR ranges"}
+        ]
+      },
+      {
+        "group": "notifications",
+        "name": "Notification Settings",
+        "settings": [
+          {"key": "email_notifications_enabled", "type": "boolean", "default": true},
+          {"key": "digest_schedule", "type": "select", "default": "daily", "options": ["immediate", "daily", "weekly"]},
+          {"key": "admin_alert_email", "type": "email", "default": null, "description": "Email for admin-level alerts"}
+        ]
+      },
+      {
+        "group": "data",
+        "name": "Data Settings",
+        "settings": [
+          {"key": "audit_log_retention_days", "type": "integer", "default": 365, "description": "Audit log retention period (IV.07 — logs never deleted, but archived)"},
+          {"key": "file_storage_limit_gb", "type": "integer", "default": 100, "description": "Storage limit per tenant"},
+          {"key": "export_format_default", "type": "select", "default": "CSV", "options": ["CSV", "PDF", "XLSX"]}
+        ]
+      }
+    ]
+  },
+  "audit_log_viewer": {
+    "description": "Browse and search the kernel audit log. Every kernel decision is logged here — ALLOWED, DENIED, ESCALATE.",
+    "features": [
+      "Search by user, action, result, date range",
+      "Filter by role, entity, validation rule",
+      "Export audit log segments for compliance reporting",
+      "Real-time stream of latest audit events",
+      "Replay capability — reconstruct decision from logged inputs (IV.08)"
+    ],
+    "columns": ["timestamp", "user", "role", "action", "entity", "result", "reason", "latency_ms", "audit_id"],
+    "filters": ["date_range", "user", "role", "action", "result", "entity"],
+    "export": ["CSV", "JSON"],
+    "retention": "Append-only — audit logs are never deleted (IV.07 Monotonic State)"
+  },
+  "platform_health": {
+    "description": "System health monitoring dashboard",
+    "monitors": [
+      {
+        "metric": "entity_status",
+        "description": "Status of each loaded entity (healthy, degraded, error)",
+        "entities": "All 18 SAINT entities"
+      },
+      {
+        "metric": "kernel_latency",
+        "description": "Average kernel validation latency (target: <0.3ms)",
+        "alert_threshold": "1ms"
+      },
+      {
+        "metric": "api_health",
+        "description": "API endpoint response times and error rates",
+        "source": "SAINT_API usage data"
+      },
+      {
+        "metric": "active_sessions",
+        "description": "Current active user sessions by role",
+        "source": "SAINT_AUTH session data"
+      },
+      {
+        "metric": "storage_usage",
+        "description": "File storage usage (drawings, photos, documents)",
+        "source": "Cloud storage metrics"
+      },
+      {
+        "metric": "scraper_status",
+        "description": "Opportunity scraper job health and last run times",
+        "source": "SAINT_OPP_SCRAPER background jobs"
+      },
+      {
+        "metric": "webhook_health",
+        "description": "Webhook delivery success rates and failures",
+        "source": "SAINT_API webhook logs"
+      }
+    ],
+    "alerts": {
+      "channels": ["email", "in-app"],
+      "conditions": [
+        {"condition": "entity_error", "severity": "critical", "action": "Immediate admin notification"},
+        {"condition": "kernel_latency > 1ms", "severity": "warning", "action": "Admin notification"},
+        {"condition": "api_error_rate > 5%", "severity": "warning", "action": "Admin notification"},
+        {"condition": "storage_usage > 80%", "severity": "info", "action": "Admin notification"},
+        {"condition": "scraper_failed", "severity": "warning", "action": "Admin notification"}
+      ]
+    }
+  },
+  "data_model": {
+    "system_setting": {
+      "id": "uuid",
+      "group": "string",
+      "key": "string",
+      "value": "string | number | boolean | array",
+      "updated_by": "uuid",
+      "updated_at": "ISO8601"
+    },
+    "user_account": {
+      "id": "uuid",
+      "email": "string",
+      "first_name": "string",
+      "last_name": "string",
+      "role": "gcp_admin | gcp_engineer | sales_rep | contractor",
+      "territory_id": "uuid | null",
+      "contractor_id": "uuid | null",
+      "active": "boolean",
+      "clerk_user_id": "string | null",
+      "sso_user_id": "string | null",
+      "last_login_at": "ISO8601 | null",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic admin data for demo mode.",
+    "users": [
+      {"name": "Sarah Chen", "email": "admin@gcp-demo.saint.dev", "role": "gcp_admin", "status": "active", "last_login": "2 hours ago"},
+      {"name": "Nicole Calpin", "email": "nicole.calpin@gcp-demo.saint.dev", "role": "gcp_engineer", "status": "active", "last_login": "1 hour ago"},
+      {"name": "Marcus Rivera", "email": "m.rivera@gcp-demo.saint.dev", "role": "sales_rep", "status": "active", "last_login": "30 minutes ago"},
+      {"name": "Trinity Building Envelope", "email": "info@trinity-demo.saint.dev", "role": "contractor", "status": "active", "last_login": "3 hours ago"},
+      {"name": "Lisa Park", "email": "l.park@gcp-demo.saint.dev", "role": "sales_rep", "status": "active", "last_login": "1 day ago"},
+      {"name": "David Chen", "email": "d.chen@gcp-demo.saint.dev", "role": "sales_rep", "status": "active", "last_login": "2 days ago"}
+    ],
+    "platform_health": {
+      "entities_healthy": 18,
+      "entities_degraded": 0,
+      "kernel_avg_latency_ms": 0.18,
+      "active_sessions": 4,
+      "storage_used_gb": 12.4,
+      "storage_limit_gb": 100
+    }
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/admin/users", "description": "List users"},
+      {"method": "POST", "path": "/api/admin/users", "description": "Create user"},
+      {"method": "GET", "path": "/api/admin/users/:id", "description": "Get user detail"},
+      {"method": "PATCH", "path": "/api/admin/users/:id", "description": "Update user"},
+      {"method": "POST", "path": "/api/admin/users/:id/deactivate", "description": "Deactivate user"},
+      {"method": "POST", "path": "/api/admin/users/:id/reactivate", "description": "Reactivate user"},
+      {"method": "POST", "path": "/api/admin/users/:id/reset-password", "description": "Trigger password reset"},
+      {"method": "GET", "path": "/api/admin/users/:id/activity", "description": "Get user activity from audit log"},
+      {"method": "GET", "path": "/api/admin/settings", "description": "Get all system settings"},
+      {"method": "PATCH", "path": "/api/admin/settings", "description": "Update system settings"},
+      {"method": "GET", "path": "/api/admin/audit-log", "description": "Query audit log"},
+      {"method": "GET", "path": "/api/admin/audit-log/export", "description": "Export audit log segment"},
+      {"method": "GET", "path": "/api/admin/health", "description": "Platform health dashboard data"},
+      {"method": "GET", "path": "/api/admin/health/entities", "description": "Entity status overview"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTAdmin.jsx",
+    "description": "Platform admin console. User management table with CRUD. System settings editor. Audit log viewer with search and export. Platform health monitoring dashboard. All admin-only.",
+    "exports": [
+      "SAINTAdmin — main entity component (admin console + routing)",
+      "UserManagement — user table with create, edit, deactivate, bulk actions",
+      "UserDetail — user profile with role, assignments, and activity history",
+      "UserCreateForm — new user creation form with role and assignment selection",
+      "SystemSettings — grouped settings editor with save/reset",
+      "AuditLogViewer — searchable, filterable audit log with export",
+      "PlatformHealth — health monitoring dashboard with entity status and metrics",
+      "AlertsPanel — active system alerts and notification management"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context, audit log data)",
+      "SAINTAuth (user account management)",
+      "All entities (health monitoring)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — user management, settings, audit log, health",
+      "gcp_engineer": "No access — kernel DENIES",
+      "sales_rep": "No access — kernel DENIES",
+      "contractor": "No access — kernel DENIES"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Admin console is read-heavy — most data sourced from other entities and kernel audit log."
+  }
+}
