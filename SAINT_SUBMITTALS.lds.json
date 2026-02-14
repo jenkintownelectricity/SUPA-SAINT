@@ -1,0 +1,411 @@
+{
+  "_lds": {
+    "uuid": "saint-submittals-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T16:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 3,
+    "sequence": 3,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-003",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Submittals",
+    "description": "Submittal package management for building envelope projects. Assemble submittal packages from GCP product data sheets, test reports, shop drawings, compatibility letters, and installation guides. Track submittal review workflow from preparation through architect/engineer approval. Integrates with Product Config and Shop Drawings entities.",
+    "principle": "Complete, compliant submittal packages. Every document traced to its product and specification section. Review workflow provides transparency for all parties — engineer, contractor, and architect."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all submittal actions via CHECK-THEN-ACT",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — gcp_engineer manages/reviews, contractor views/requests review, gcp_admin full access",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for data isolation and audit trail",
+    "product_config": "SAINT_PRODUCT_CONFIG.lds.json — product data sheets, test reports, spec sections",
+    "shop_drawings": "SAINT_SHOP_DRAWINGS.lds.json — shop drawings included in submittal packages",
+    "contractor_dash": "SAINT_CONTRACTOR_DASH.lds.json — submittal status widget on contractor dashboard"
+  },
+  "submittal_structure": {
+    "description": "A submittal package is a structured collection of documents organized by CSI specification section, assembled to demonstrate product compliance with project specifications.",
+    "package_organization": {
+      "level_1": "Project — one or more submittal packages per project",
+      "level_2": "Specification Section — each package covers one or more CSI spec sections",
+      "level_3": "Product — each spec section contains documents for the products specified",
+      "level_4": "Document — individual product data sheets, test reports, etc."
+    },
+    "document_types": [
+      {
+        "type": "product_data_sheet",
+        "description": "Manufacturer product data sheet with specifications, performance data, and application instructions",
+        "source": "SAINT_PRODUCT_CONFIG — auto-pulled from product catalog",
+        "required": true,
+        "per": "product"
+      },
+      {
+        "type": "test_report",
+        "description": "Third-party test reports demonstrating product performance (ASTM, UL, FM, etc.)",
+        "source": "SAINT_PRODUCT_CONFIG — linked from product data",
+        "required": true,
+        "per": "product",
+        "examples": ["ASTM E2178 (air permeance)", "ASTM E331 (water penetration)", "UL 263 (fire resistance)", "ASTM C518 (thermal conductivity)"]
+      },
+      {
+        "type": "compatibility_letter",
+        "description": "Manufacturer letter confirming product compatibility within the specified assembly",
+        "source": "SAINT_PRODUCT_CONFIG — generated from compatibility engine validation",
+        "required": "when_mixed_system",
+        "per": "assembly"
+      },
+      {
+        "type": "shop_drawing",
+        "description": "Approved shop drawings showing product application details",
+        "source": "SAINT_SHOP_DRAWINGS — linked from approved drawings",
+        "required": true,
+        "per": "assembly"
+      },
+      {
+        "type": "installation_guide",
+        "description": "Manufacturer installation instructions for the specific product and application",
+        "source": "SAINT_PRODUCT_CONFIG — linked from product data",
+        "required": true,
+        "per": "product"
+      },
+      {
+        "type": "warranty_letter",
+        "description": "Warranty coverage letter for the specified products/system",
+        "source": "SAINT_WARRANTY — generated from warranty eligibility determination",
+        "required": false,
+        "per": "assembly"
+      },
+      {
+        "type": "msds_sds",
+        "description": "Material Safety Data Sheet / Safety Data Sheet",
+        "source": "SAINT_PRODUCT_CONFIG — linked from product data",
+        "required": true,
+        "per": "product"
+      },
+      {
+        "type": "color_sample",
+        "description": "Physical or digital color samples for finish products",
+        "source": "Manual upload or SAINT_PRODUCT_CONFIG color chart",
+        "required": "when_applicable",
+        "per": "product"
+      },
+      {
+        "type": "qualification_statement",
+        "description": "Installer qualification statement demonstrating contractor experience with specified products",
+        "source": "Manual upload by contractor",
+        "required": false,
+        "per": "contractor"
+      },
+      {
+        "type": "supplemental",
+        "description": "Any additional documents requested by architect/engineer",
+        "source": "Manual upload",
+        "required": false,
+        "per": "as_needed"
+      }
+    ]
+  },
+  "assembly_workflow": {
+    "description": "Submittal package assembly process — from specification analysis to document compilation",
+    "stages": [
+      {
+        "id": "spec_analysis",
+        "name": "Specification Analysis",
+        "description": "Parse project specifications to identify required submittal sections. Map spec sections to GCP products.",
+        "actions": ["create_submittal_package", "import_spec_sections"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "ai_assist": {
+          "description": "AI parses uploaded project specifications to extract submittal requirements",
+          "inputs": ["Project specification document (PDF)"],
+          "outputs": ["List of applicable CSI sections", "Products required per section", "Document checklist"]
+        }
+      },
+      {
+        "id": "document_assembly",
+        "name": "Document Assembly",
+        "description": "Compile documents for each product and specification section. Auto-pull available documents from Product Config. Flag missing documents.",
+        "actions": ["add_document", "remove_document", "auto_populate", "upload_custom_document"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "auto_populate": {
+          "description": "System automatically pulls product data sheets, test reports, installation guides, and SDS from the product catalog for all GCP products in the configuration",
+          "source": "SAINT_PRODUCT_CONFIG product records",
+          "manual_required": ["color_sample", "qualification_statement", "supplemental"]
+        }
+      },
+      {
+        "id": "completeness_check",
+        "name": "Completeness Check",
+        "description": "Verify all required documents are present for each spec section. Flag gaps.",
+        "actions": ["validate_completeness"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "validation": {
+          "checks": [
+            "Every product has a data sheet",
+            "Every product has relevant test reports",
+            "Every product has installation guide",
+            "Every product has SDS",
+            "Shop drawings are approved (not draft or rejected)",
+            "Compatibility letters present for mixed-manufacturer assemblies",
+            "All documents are current versions (not superseded)"
+          ],
+          "result": "complete | incomplete_with_gaps",
+          "gaps_report": "List of missing documents with source product and spec section"
+        }
+      },
+      {
+        "id": "package_formatting",
+        "name": "Package Formatting",
+        "description": "Generate formatted submittal package with cover sheet, table of contents, section dividers, and page numbering.",
+        "actions": ["generate_package", "preview_package"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin"],
+        "output_format": {
+          "cover_sheet": {
+            "fields": ["project_name", "project_address", "contractor", "architect", "engineer", "submittal_number", "date", "spec_sections_covered", "revision_number"]
+          },
+          "table_of_contents": "Auto-generated from document assembly with page numbers",
+          "section_dividers": "Tab pages between CSI spec sections",
+          "page_numbering": "Sequential across entire package",
+          "format": "PDF — single compiled document",
+          "individual_documents": "Also available as individual files for electronic review"
+        }
+      },
+      {
+        "id": "submission",
+        "name": "Submission for Review",
+        "description": "Submit package to architect/engineer of record for review. Track reviewer, submission date, and expected response.",
+        "actions": ["submit_for_review", "request_submittal_review"],
+        "allowed_roles": ["gcp_engineer", "gcp_admin", "contractor"],
+        "submission_methods": [
+          {"method": "in_platform", "description": "Reviewer accesses package via SAINT platform link"},
+          {"method": "email", "description": "Package PDF emailed to reviewer with tracking link"},
+          {"method": "download", "description": "PDF downloaded for manual submission to reviewer"}
+        ]
+      }
+    ]
+  },
+  "review_workflow": {
+    "description": "Submittal review tracking from submission through final disposition",
+    "review_states": [
+      {
+        "state": "draft",
+        "description": "Package being assembled — not yet submitted",
+        "next_states": ["submitted"]
+      },
+      {
+        "state": "submitted",
+        "description": "Package submitted to reviewer (architect/engineer of record)",
+        "next_states": ["under_review"],
+        "auto_action": "Log submission date, notify reviewer"
+      },
+      {
+        "state": "under_review",
+        "description": "Reviewer is evaluating the submittal package",
+        "next_states": ["approved", "approved_as_noted", "revise_and_resubmit", "rejected"]
+      },
+      {
+        "state": "approved",
+        "description": "Submittal approved — no exceptions. Proceed with specified products.",
+        "stamp": "APPROVED",
+        "terminal": false,
+        "note": "Products and assemblies cleared for procurement and installation"
+      },
+      {
+        "state": "approved_as_noted",
+        "description": "Submittal approved with reviewer comments/conditions. Proceed but address noted items.",
+        "stamp": "APPROVED AS NOTED",
+        "terminal": false,
+        "requires": "Review and acknowledge noted items before proceeding",
+        "next_states": ["acknowledged"]
+      },
+      {
+        "state": "acknowledged",
+        "description": "Noted items from 'approved as noted' have been reviewed and acknowledged by submitter",
+        "terminal": true
+      },
+      {
+        "state": "revise_and_resubmit",
+        "description": "Submittal requires revisions and must be resubmitted. Reviewer comments indicate required changes.",
+        "stamp": "REVISE AND RESUBMIT",
+        "next_states": ["draft"],
+        "auto_action": "Notify GCP engineer and contractor. Increment revision number.",
+        "requires": "Revision comments from reviewer documented in notes"
+      },
+      {
+        "state": "rejected",
+        "description": "Submittal rejected — specified products not acceptable. Alternative products or approach required.",
+        "stamp": "REJECTED",
+        "next_states": ["draft"],
+        "auto_action": "Notify GCP engineer and contractor. Escalate to gcp_admin if repeat rejection.",
+        "requires": "Rejection reason and alternative guidance from reviewer"
+      }
+    ],
+    "tracking_fields": {
+      "submitted_date": "ISO8601 — when package was submitted",
+      "expected_response_date": "ISO8601 — contractual response deadline (typically 10-14 business days)",
+      "actual_response_date": "ISO8601 — when reviewer responded",
+      "response_days": "integer — business days between submission and response",
+      "revision_number": "integer — starts at 0, increments on each resubmission",
+      "reviewer_name": "string — architect or engineer of record",
+      "reviewer_firm": "string — reviewing firm name",
+      "reviewer_stamp": "string — final disposition stamp",
+      "reviewer_comments": "string — reviewer notes and comments"
+    }
+  },
+  "spec_section_mapping": {
+    "description": "Pre-defined mapping of GCP products to CSI MasterFormat specification sections for submittal organization",
+    "sections": [
+      {
+        "division": "07",
+        "title": "Thermal & Moisture Protection",
+        "sections": [
+          {"section": "07 11 13", "title": "Bituminous Waterproofing", "gcp_products": ["Bituthene 3000", "Bituthene Liquid Membrane"]},
+          {"section": "07 13 00", "title": "Sheet Waterproofing", "gcp_products": ["Bituthene 3000"]},
+          {"section": "07 21 00", "title": "Thermal Insulation", "gcp_products": ["Gold Coat CI-100"]},
+          {"section": "07 24 13", "title": "Polymer-Based EIFS", "gcp_products": ["Perma Finish EIF-220", "Gold Coat CI-100", "Dur-O-Wal Base Coat BC-200", "EIFS Adhesive ADH-50"]},
+          {"section": "07 27 00", "title": "Air Barriers", "gcp_products": ["Perm-A-Barrier NPS", "Perm-A-Barrier VPL 50"]},
+          {"section": "07 81 00", "title": "Spray-Applied Fireproofing", "gcp_products": ["Monokote MK-6/HY", "Cafco 300"]}
+        ]
+      }
+    ]
+  },
+  "data_model": {
+    "submittal_package": {
+      "id": "uuid",
+      "package_number": "string — sequential per project (e.g., SUB-001)",
+      "project_id": "uuid",
+      "contractor_id": "uuid",
+      "title": "string — package description",
+      "spec_sections": "array — CSI sections covered by this package",
+      "configuration_id": "uuid | null — links to SAINT_PRODUCT_CONFIG assembly",
+      "revision_number": "integer — starts at 0",
+      "status": "draft | submitted | under_review | approved | approved_as_noted | acknowledged | revise_and_resubmit | rejected",
+      "documents": "array — ordered list of document references",
+      "completeness_status": "complete | incomplete_with_gaps",
+      "gaps": "array — missing document descriptions",
+      "submitted_date": "ISO8601 | null",
+      "expected_response_date": "ISO8601 | null",
+      "actual_response_date": "ISO8601 | null",
+      "reviewer_name": "string | null",
+      "reviewer_firm": "string | null",
+      "reviewer_stamp": "string | null",
+      "reviewer_comments": "string | null",
+      "cover_sheet_url": "string | null — generated PDF cover sheet",
+      "compiled_package_url": "string | null — full compiled PDF",
+      "created_by": "uuid",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "audit_trail": "array — append-only log"
+    },
+    "submittal_document": {
+      "id": "uuid",
+      "package_id": "uuid",
+      "document_type": "product_data_sheet | test_report | compatibility_letter | shop_drawing | installation_guide | warranty_letter | msds_sds | color_sample | qualification_statement | supplemental",
+      "product_id": "string | null — GCP product reference",
+      "spec_section": "string — CSI section this document covers",
+      "title": "string",
+      "file_url": "string",
+      "file_size_bytes": "integer",
+      "source": "auto_populated | manual_upload | linked_entity",
+      "source_entity": "string | null — SAINT_PRODUCT_CONFIG | SAINT_SHOP_DRAWINGS | SAINT_WARRANTY",
+      "version": "string — document version",
+      "current": "boolean — true if latest version",
+      "page_count": "integer",
+      "order_in_package": "integer — display order within package",
+      "added_by": "uuid",
+      "added_at": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic submittal data for demo mode.",
+    "packages": [
+      {
+        "package_number": "SUB-001",
+        "project": "One Liberty Place — Facade Restoration",
+        "title": "EIFS Assembly — Division 07 24 13",
+        "spec_sections": ["07 24 13"],
+        "status": "approved",
+        "revision": 0,
+        "documents": 12,
+        "reviewer": "Smith & Associates Architects",
+        "stamp": "APPROVED",
+        "submitted": "2025-11-15",
+        "response": "2025-12-01"
+      },
+      {
+        "package_number": "SUB-002",
+        "project": "Comcast Technology Center — Level 12 AWB",
+        "title": "Air & Water Barrier — Division 07 27 00",
+        "spec_sections": ["07 27 00"],
+        "status": "approved_as_noted",
+        "revision": 1,
+        "documents": 9,
+        "reviewer": "Foster + Partners",
+        "stamp": "APPROVED AS NOTED",
+        "submitted": "2026-01-20",
+        "response": "2026-02-05",
+        "notes": "Provide additional test report for cold-weather application below 25°F. Acceptable to proceed."
+      },
+      {
+        "package_number": "SUB-003",
+        "project": "Children's Hospital — Wing B Fireproofing",
+        "title": "Spray-Applied Fireproofing — Division 07 81 00",
+        "spec_sections": ["07 81 00"],
+        "status": "draft",
+        "revision": 0,
+        "documents": 5,
+        "completeness": "incomplete — missing UL design assembly documentation",
+        "reviewer": null
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/submittals", "description": "List submittal packages (filtered by project, status, contractor)"},
+      {"method": "POST", "path": "/api/submittals", "description": "Create new submittal package"},
+      {"method": "GET", "path": "/api/submittals/:id", "description": "Get package detail with all documents"},
+      {"method": "PATCH", "path": "/api/submittals/:id", "description": "Update package (status, documents, reviewer info)"},
+      {"method": "POST", "path": "/api/submittals/:id/documents", "description": "Add document to package"},
+      {"method": "DELETE", "path": "/api/submittals/:id/documents/:docId", "description": "Remove document from package"},
+      {"method": "POST", "path": "/api/submittals/:id/auto-populate", "description": "Auto-populate documents from product catalog"},
+      {"method": "POST", "path": "/api/submittals/:id/validate", "description": "Run completeness check"},
+      {"method": "POST", "path": "/api/submittals/:id/generate-package", "description": "Generate compiled PDF package"},
+      {"method": "POST", "path": "/api/submittals/:id/submit", "description": "Submit package for review"},
+      {"method": "PATCH", "path": "/api/submittals/:id/review", "description": "Record reviewer response (approve, reject, etc.)"},
+      {"method": "GET", "path": "/api/submittals/spec-sections", "description": "List spec sections with product mapping"},
+      {"method": "POST", "path": "/api/submittals/parse-spec", "description": "AI-parse project specification for submittal requirements"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTSubmittals.jsx",
+    "description": "Submittal management interface. Package list with status tracking. Document assembly workspace with auto-populate from product catalog. Completeness validator. PDF package generator. Review workflow tracker. All actions validated through kernel.",
+    "exports": [
+      "SAINTSubmittals — main entity component (package list + workspace + routing)",
+      "SubmittalList — filterable list of submittal packages with status badges",
+      "SubmittalWorkspace — document assembly interface with drag-drop ordering",
+      "SubmittalAutoPopulate — one-click document pull from product catalog",
+      "CompletenessValidator — visual checklist of required vs present documents",
+      "PackagePreview — in-browser preview of compiled submittal PDF",
+      "ReviewTracker — timeline visualization of submission → review → disposition",
+      "SpecAnalyzer — AI-powered specification parser for submittal requirements",
+      "SubmittalCoverSheet — editable cover sheet with project and reviewer info"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context)",
+      "SAINTAuth (user identity, role)",
+      "SAINT_PRODUCT_CONFIG (product data sheets, test reports, installation guides, SDS)",
+      "SAINT_SHOP_DRAWINGS (approved shop drawings for inclusion)",
+      "SAINT_WARRANTY (warranty letters for inclusion)"
+    ],
+    "views": {
+      "gcp_engineer": "Full access — create packages, assemble documents, auto-populate, submit for review, track responses",
+      "gcp_admin": "Full access — all engineer capabilities plus cross-project reporting",
+      "contractor": "View own submittals — track status, view approved packages, request submittal review",
+      "sales_rep": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained component loaded by SAINTShell entity loader. Document references resolved from SAINT_PRODUCT_CONFIG and SAINT_SHOP_DRAWINGS entities."
+  }
+}
