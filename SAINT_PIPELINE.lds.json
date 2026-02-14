@@ -1,0 +1,394 @@
+{
+  "_lds": {
+    "uuid": "saint-pipeline-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T18:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 4,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-004",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Sales Pipeline",
+    "description": "Sales pipeline management for GCP building envelope products. Track deals from opportunity through close with stage-based workflow, forecasting, and activity logging. Integrates with Opportunity Scraper for lead-to-deal conversion and territory assignment.",
+    "principle": "Every deal moves through defined stages. No stage skipping without justification. Pipeline data isolated per sales rep — cross-rep visibility requires gcp_admin role. Forecasting based on stage probability and weighted value."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all pipeline actions via CHECK-THEN-ACT",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — sales_rep manages own pipeline, gcp_admin sees all",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for pipeline data isolation",
+    "opp_scraper": "SAINT_OPP_SCRAPER.lds.json — opportunity-to-deal conversion, territory feed",
+    "territories": "SAINT_TERRITORIES.lds.json — territory assignment for pipeline filtering",
+    "product_config": "SAINT_PRODUCT_CONFIG.lds.json — product references in deal specifications"
+  },
+  "deal_stages": {
+    "description": "Linear deal progression from lead through close. Each stage has defined criteria and expected duration.",
+    "stages": [
+      {
+        "id": "lead",
+        "name": "Lead",
+        "order": 1,
+        "probability": 10,
+        "description": "New lead from Opportunity Scraper or manual entry. Not yet qualified.",
+        "entry_criteria": "Opportunity identified with building envelope scope",
+        "exit_criteria": "Initial contact made, basic qualification complete",
+        "expected_duration_days": 14,
+        "actions": ["qualify_lead", "disqualify_lead", "add_notes", "log_activity"],
+        "auto_from_scraper": "Opportunities with score >= 70 auto-create as leads"
+      },
+      {
+        "id": "qualified",
+        "name": "Qualified",
+        "order": 2,
+        "probability": 25,
+        "description": "Lead qualified — confirmed building envelope project with GCP product fit.",
+        "entry_criteria": "Contact verified, project confirmed, budget range identified",
+        "exit_criteria": "Specification review complete, GCP product fit confirmed",
+        "expected_duration_days": 21,
+        "actions": ["request_spec_review", "schedule_meeting", "add_notes", "log_activity"],
+        "qualification_checklist": [
+          "Project is real (not speculative)",
+          "Building envelope scope confirmed",
+          "Budget range identified",
+          "Decision-maker identified",
+          "Timeline established",
+          "GCP product fit assessed"
+        ]
+      },
+      {
+        "id": "spec_review",
+        "name": "Specification Review",
+        "order": 3,
+        "probability": 40,
+        "description": "Project specifications being reviewed for GCP product alignment. Engineer may be involved.",
+        "entry_criteria": "Specifications received or available",
+        "exit_criteria": "Spec review complete, product recommendations finalized",
+        "expected_duration_days": 14,
+        "actions": ["submit_spec_to_engineering", "add_product_recommendations", "add_notes", "log_activity"],
+        "engineering_handoff": "Sales rep can request gcp_engineer review specific spec sections for product fit"
+      },
+      {
+        "id": "proposal",
+        "name": "Proposal",
+        "order": 4,
+        "probability": 60,
+        "description": "Preparing or presenting proposal to general contractor, architect, or owner.",
+        "entry_criteria": "Product recommendations finalized, pricing prepared",
+        "exit_criteria": "Proposal delivered and acknowledged by prospect",
+        "expected_duration_days": 14,
+        "actions": ["create_proposal", "send_proposal", "schedule_presentation", "add_notes", "log_activity"],
+        "proposal_content": ["Product recommendations", "Pricing (list or project-specific)", "Technical specifications", "Warranty overview", "Installation support", "Submittal timeline"]
+      },
+      {
+        "id": "negotiation",
+        "name": "Negotiation",
+        "order": 5,
+        "probability": 75,
+        "description": "Active negotiation on pricing, terms, scope, or product substitutions.",
+        "entry_criteria": "Proposal reviewed by prospect, feedback received",
+        "exit_criteria": "Agreement reached on pricing and scope",
+        "expected_duration_days": 21,
+        "actions": ["update_pricing", "modify_scope", "request_sample", "schedule_demo", "add_notes", "log_activity"],
+        "escalation": {
+          "condition": "deal_value > $500,000",
+          "action": "Notify gcp_admin for visibility",
+          "boundary_rule": "sales_rep escalation — deal_exceeds_threshold"
+        }
+      },
+      {
+        "id": "verbal_commit",
+        "name": "Verbal Commit",
+        "order": 6,
+        "probability": 90,
+        "description": "Prospect has verbally committed. Awaiting PO or signed agreement.",
+        "entry_criteria": "Verbal agreement on price, scope, and timeline",
+        "exit_criteria": "PO received or agreement signed",
+        "expected_duration_days": 14,
+        "actions": ["request_po", "send_agreement", "add_notes", "log_activity"]
+      },
+      {
+        "id": "closed_won",
+        "name": "Closed Won",
+        "order": 7,
+        "probability": 100,
+        "description": "Deal won. PO received. Transition to project execution.",
+        "terminal": true,
+        "actions": ["create_project", "assign_engineer", "initiate_submittals", "add_notes"],
+        "post_close": {
+          "create_project": "Auto-create project in SAINT_CONTRACTOR_DASH for the contractor",
+          "assign_engineer": "Notify gcp_admin to assign engineer for shop drawings and submittals",
+          "trigger_submittals": "Initiate submittal package preparation in SAINT_SUBMITTALS"
+        }
+      },
+      {
+        "id": "closed_lost",
+        "name": "Closed Lost",
+        "order": 8,
+        "probability": 0,
+        "description": "Deal lost. Document reason for loss analytics.",
+        "terminal": true,
+        "actions": ["add_notes"],
+        "required_fields": ["loss_reason", "competitor_won"],
+        "loss_reasons": [
+          "price",
+          "product_not_specified",
+          "competitor_product_preferred",
+          "project_cancelled",
+          "project_delayed",
+          "scope_changed",
+          "no_response",
+          "relationship",
+          "other"
+        ]
+      }
+    ]
+  },
+  "pipeline_views": {
+    "description": "Multiple visualization modes for pipeline data",
+    "views": [
+      {
+        "id": "kanban",
+        "name": "Kanban Board",
+        "description": "Drag-and-drop cards across stage columns. Default view.",
+        "features": ["Drag to move deals between stages", "Card shows deal name, value, company, age", "Column totals show weighted pipeline value", "Color-coded by deal age (green=on-track, yellow=aging, red=stale)"]
+      },
+      {
+        "id": "list",
+        "name": "List View",
+        "description": "Sortable table of all deals with full detail columns.",
+        "columns": ["deal_name", "company", "value", "stage", "probability", "weighted_value", "close_date", "age_days", "last_activity", "assigned_rep"],
+        "features": ["Sort by any column", "Multi-select for bulk actions", "Inline editing for quick updates"]
+      },
+      {
+        "id": "forecast",
+        "name": "Forecast View",
+        "description": "Revenue forecast by month based on expected close dates and stage probabilities.",
+        "metrics": ["Total pipeline value", "Weighted pipeline value", "Expected revenue by month", "Best case vs worst case vs commit"],
+        "chart_type": "Stacked bar chart by month, segmented by stage"
+      },
+      {
+        "id": "funnel",
+        "name": "Funnel View",
+        "description": "Conversion funnel showing deal count and value at each stage.",
+        "metrics": ["Deals per stage", "Value per stage", "Conversion rate between stages", "Average time in each stage"],
+        "chart_type": "Horizontal funnel with stage labels and metrics"
+      }
+    ]
+  },
+  "activity_tracking": {
+    "description": "Log all sales activities against deals for complete interaction history",
+    "activity_types": [
+      {"type": "call", "icon": "Phone", "fields": ["contact_name", "duration_minutes", "outcome", "notes"]},
+      {"type": "email", "icon": "Mail", "fields": ["contact_name", "subject", "outcome", "notes"]},
+      {"type": "meeting", "icon": "Users", "fields": ["contact_name", "location", "attendees", "duration_minutes", "outcome", "notes"]},
+      {"type": "site_visit", "icon": "MapPin", "fields": ["location", "attendees", "purpose", "findings", "notes"]},
+      {"type": "sample_request", "icon": "Package", "fields": ["products_requested", "ship_to", "notes"]},
+      {"type": "demo", "icon": "Monitor", "fields": ["contact_name", "products_demoed", "attendees", "outcome", "notes"]},
+      {"type": "proposal_sent", "icon": "FileText", "fields": ["proposal_version", "products_included", "total_value", "notes"]},
+      {"type": "note", "icon": "StickyNote", "fields": ["notes"]}
+    ],
+    "activity_feed": {
+      "description": "Chronological activity log per deal with filtering by activity type",
+      "features": ["Timeline view with activity icons", "Filter by activity type", "Search within notes", "Activity count per deal"]
+    }
+  },
+  "forecasting": {
+    "description": "Pipeline forecasting based on stage probability, expected close dates, and historical conversion rates",
+    "forecast_categories": [
+      {"category": "commit", "description": "Deals in verbal commit or later — high confidence", "min_probability": 90},
+      {"category": "best_case", "description": "Deals in proposal or later — moderate confidence", "min_probability": 60},
+      {"category": "pipeline", "description": "All qualified deals — total addressable pipeline", "min_probability": 25},
+      {"category": "upside", "description": "Leads and early-stage — stretch targets", "min_probability": 10}
+    ],
+    "metrics": {
+      "total_pipeline": "Sum of all deal values",
+      "weighted_pipeline": "Sum of (deal_value * stage_probability) for all deals",
+      "forecast_accuracy": "Historical: actual closed vs forecast — trailing 90 days",
+      "average_deal_size": "Mean deal value for closed-won deals",
+      "average_sales_cycle": "Mean days from lead to closed-won",
+      "win_rate": "Closed-won / (closed-won + closed-lost) — trailing 90 days",
+      "pipeline_coverage": "Total pipeline / quota — healthy is 3x-4x"
+    }
+  },
+  "data_model": {
+    "deal": {
+      "id": "uuid",
+      "deal_name": "string",
+      "company_name": "string",
+      "contact_name": "string",
+      "contact_email": "string | null",
+      "contact_phone": "string | null",
+      "opportunity_id": "uuid | null — link to SAINT_OPP_SCRAPER if sourced from scraper",
+      "territory_id": "uuid",
+      "assigned_rep_id": "uuid",
+      "stage": "lead | qualified | spec_review | proposal | negotiation | verbal_commit | closed_won | closed_lost",
+      "value": "number — USD deal value",
+      "weighted_value": "number — value * probability",
+      "probability": "number — stage-based probability (0-100)",
+      "expected_close_date": "ISO8601",
+      "actual_close_date": "ISO8601 | null",
+      "products": "array — GCP products involved in the deal",
+      "assembly_types": "array — building envelope systems (EIF, AWB, FP, etc.)",
+      "square_footage": "number | null — estimated project square footage",
+      "project_address": "string | null",
+      "general_contractor": "string | null",
+      "architect": "string | null",
+      "loss_reason": "string | null — required if closed_lost",
+      "competitor_won": "string | null — competitor who won if closed_lost",
+      "source": "scraper | referral | inbound | trade_show | cold_outreach | existing_relationship",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "stage_entered_at": "ISO8601 — when deal entered current stage",
+      "days_in_stage": "integer — calculated",
+      "total_age_days": "integer — days since creation",
+      "last_activity_at": "ISO8601",
+      "activity_count": "integer",
+      "audit_trail": "array — append-only log of stage transitions and actions"
+    },
+    "activity": {
+      "id": "uuid",
+      "deal_id": "uuid",
+      "type": "call | email | meeting | site_visit | sample_request | demo | proposal_sent | note",
+      "logged_by": "uuid",
+      "logged_at": "ISO8601",
+      "contact_name": "string | null",
+      "outcome": "string | null",
+      "notes": "string",
+      "metadata": "object — type-specific fields"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic pipeline data for demo mode. Marcus Rivera as sales_rep.",
+    "deals": [
+      {
+        "name": "University City Science Center — EIFS Package",
+        "company": "Turner Construction",
+        "value": 850000,
+        "stage": "proposal",
+        "probability": 60,
+        "source": "scraper",
+        "products": ["Perma Finish EIF-220", "Gold Coat CI-100"],
+        "close_date": "2026-04-15",
+        "age_days": 45,
+        "activities": 12
+      },
+      {
+        "name": "Bryn Mawr Hospital — AWB + Fireproofing",
+        "company": "Gilbane Building Company",
+        "value": 1200000,
+        "stage": "negotiation",
+        "probability": 75,
+        "source": "scraper",
+        "products": ["Perm-A-Barrier NPS", "Monokote MK-6/HY"],
+        "close_date": "2026-03-30",
+        "age_days": 60,
+        "activities": 18
+      },
+      {
+        "name": "Jefferson Hospital Renovation — Waterproofing",
+        "company": "Skanska USA",
+        "value": 420000,
+        "stage": "spec_review",
+        "probability": 40,
+        "source": "scraper",
+        "products": ["Bituthene 3000", "Hydroduct 220"],
+        "close_date": "2026-05-30",
+        "age_days": 21,
+        "activities": 6
+      },
+      {
+        "name": "Navy Yard Building 101 — Full Envelope",
+        "company": "Barton Malow",
+        "value": 2100000,
+        "stage": "qualified",
+        "probability": 25,
+        "source": "scraper",
+        "products": ["Perma Finish EIF-220", "Bituthene 3000", "Perm-A-Barrier NPS"],
+        "close_date": "2026-07-15",
+        "age_days": 14,
+        "activities": 3
+      },
+      {
+        "name": "King of Prussia Town Center — EIFS",
+        "company": "Whiting-Turner",
+        "value": 650000,
+        "stage": "lead",
+        "probability": 10,
+        "source": "scraper",
+        "products": ["Perma Finish EIF-220"],
+        "close_date": "2026-08-30",
+        "age_days": 7,
+        "activities": 1
+      },
+      {
+        "name": "Drexel Academic Tower — Fireproofing",
+        "company": "L.F. Driscoll",
+        "value": 380000,
+        "stage": "closed_won",
+        "probability": 100,
+        "source": "referral",
+        "products": ["Cafco 300"],
+        "close_date": "2026-01-15",
+        "age_days": 90,
+        "activities": 22
+      }
+    ],
+    "pipeline_summary": {
+      "total_pipeline": 5600000,
+      "weighted_pipeline": 2397500,
+      "deals_count": 6,
+      "win_rate": "33%",
+      "average_deal_size": 933333
+    }
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/pipeline/deals", "description": "List deals (filtered by stage, rep, territory, date range)"},
+      {"method": "POST", "path": "/api/pipeline/deals", "description": "Create new deal"},
+      {"method": "GET", "path": "/api/pipeline/deals/:id", "description": "Get deal detail with activity history"},
+      {"method": "PATCH", "path": "/api/pipeline/deals/:id", "description": "Update deal (stage transition, field updates)"},
+      {"method": "POST", "path": "/api/pipeline/deals/:id/activities", "description": "Log activity against deal"},
+      {"method": "GET", "path": "/api/pipeline/deals/:id/activities", "description": "Get activity history for deal"},
+      {"method": "POST", "path": "/api/pipeline/deals/from-opportunity/:oppId", "description": "Convert opportunity to deal"},
+      {"method": "GET", "path": "/api/pipeline/forecast", "description": "Get pipeline forecast by period"},
+      {"method": "GET", "path": "/api/pipeline/funnel", "description": "Get funnel conversion metrics"},
+      {"method": "GET", "path": "/api/pipeline/metrics", "description": "Get pipeline KPIs (win rate, avg deal size, avg cycle)"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTPipeline.jsx",
+    "description": "Sales pipeline management interface. Kanban board with drag-and-drop stage transitions. List view with sort and filter. Forecast chart with commit/best-case/pipeline categories. Activity logging per deal. All actions validated through kernel.",
+    "exports": [
+      "SAINTPipeline — main entity component (pipeline views + routing)",
+      "PipelineKanban — drag-and-drop kanban board with stage columns",
+      "PipelineList — sortable, filterable deal table with inline editing",
+      "PipelineForecast — revenue forecast chart by month with categories",
+      "PipelineFunnel — conversion funnel visualization with stage metrics",
+      "DealDetail — full deal view with stage timeline and activity history",
+      "DealForm — create/edit deal form with product and territory selection",
+      "ActivityLog — chronological activity feed with type filters",
+      "ActivityForm — log new activity with type-specific fields",
+      "OpportunityConverter — convert scraper opportunity to pipeline deal"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context)",
+      "SAINTAuth (user identity, territory assignment)",
+      "SAINT_OPP_SCRAPER (opportunity-to-deal conversion)",
+      "SAINT_TERRITORIES (territory filtering)",
+      "SAINT_PRODUCT_CONFIG (product references)"
+    ],
+    "views": {
+      "sales_rep": "Own pipeline — manage own deals, log activities, view own forecast",
+      "gcp_admin": "Full access — all pipelines, all territories, company-wide forecast, rep performance",
+      "gcp_engineer": "No access — kernel DENIES load_entity for this role",
+      "contractor": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained component loaded by SAINTShell entity loader. Pipeline data isolated per sales rep at kernel level."
+  }
+}

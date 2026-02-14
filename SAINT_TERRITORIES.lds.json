@@ -1,0 +1,359 @@
+{
+  "_lds": {
+    "uuid": "saint-territories-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T18:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 4,
+    "sequence": 2,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-004",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Territories",
+    "description": "Sales territory management for GCP building envelope products. Define geographic territories by ZIP code and county, assign reps, track performance metrics, and manage territory changes. Integrates with Opportunity Scraper for territory-filtered leads and Pipeline for territory-scoped forecasting.",
+    "principle": "Every ZIP code belongs to exactly one territory. Every territory has exactly one assigned rep. Cross-territory actions require gcp_admin mediation (VR-SAINT-003). Territory data drives opportunity assignment and pipeline filtering."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all territory actions, enforces VR-SAINT-003 territory compliance",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — sales_rep views own territory, gcp_admin manages all territories",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for territory assignment",
+    "opp_scraper": "SAINT_OPP_SCRAPER.lds.json — territory-filtered opportunity assignment",
+    "pipeline": "SAINT_PIPELINE.lds.json — territory-scoped pipeline and forecast"
+  },
+  "territory_structure": {
+    "hierarchy": {
+      "level_1": {
+        "name": "Region",
+        "description": "Largest geographic grouping (e.g., Northeast, Mid-Atlantic, Southeast)",
+        "managed_by": "Regional Sales Director (gcp_admin)"
+      },
+      "level_2": {
+        "name": "District",
+        "description": "Sub-region grouping (e.g., Greater Philadelphia, South Jersey, Delaware Valley)",
+        "managed_by": "District Sales Manager (gcp_admin)"
+      },
+      "level_3": {
+        "name": "Territory",
+        "description": "Individual rep assignment — defined by ZIP codes and/or counties",
+        "managed_by": "Sales Rep (owner) + gcp_admin (changes)"
+      }
+    },
+    "assignment_rules": {
+      "exclusivity": "Each ZIP code belongs to exactly one territory — no overlap allowed",
+      "completeness": "All ZIP codes in a region should be assigned — no gaps (unassigned ZIPs go to admin queue)",
+      "one_rep_per_territory": "Each territory has exactly one primary assigned rep",
+      "backup_rep": "Optional backup rep for coverage during absence",
+      "change_requires_admin": "Territory reassignment requires gcp_admin approval (VR-SAINT-003 enforcement)"
+    }
+  },
+  "territory_map": {
+    "description": "Interactive map visualization showing territory boundaries, opportunity density, and performance heat maps",
+    "features": [
+      {
+        "id": "boundary_view",
+        "name": "Territory Boundaries",
+        "description": "Map showing territory outlines with assigned rep name, color-coded by region/district",
+        "interaction": "Click territory to see detail. Hover for quick stats."
+      },
+      {
+        "id": "opportunity_density",
+        "name": "Opportunity Density",
+        "description": "Heat map overlay showing concentration of opportunities by location",
+        "data_source": "SAINT_OPP_SCRAPER opportunity locations"
+      },
+      {
+        "id": "pipeline_heat",
+        "name": "Pipeline Value Heat Map",
+        "description": "Heat map overlay showing pipeline value concentration by territory",
+        "data_source": "SAINT_PIPELINE deal values aggregated by territory"
+      },
+      {
+        "id": "coverage_gaps",
+        "name": "Coverage Gaps",
+        "description": "Highlight ZIP codes not assigned to any territory",
+        "action": "Click unassigned area to initiate territory assignment"
+      },
+      {
+        "id": "rep_location",
+        "name": "Rep Locations",
+        "description": "Pin showing each rep's base location within their territory"
+      }
+    ],
+    "map_provider": "Mapbox GL JS",
+    "default_view": {
+      "center": [-75.1652, 39.9526],
+      "zoom": 8,
+      "description": "Centered on Philadelphia — GCP's primary market"
+    }
+  },
+  "territory_management": {
+    "operations": [
+      {
+        "operation": "create_territory",
+        "description": "Define new territory with name, ZIP codes, county assignments, and assigned rep",
+        "allowed_roles": ["gcp_admin"],
+        "validation": [
+          "ZIP codes not already assigned to another territory",
+          "Assigned rep exists and has sales_rep role",
+          "Territory name is unique within district"
+        ]
+      },
+      {
+        "operation": "modify_territory",
+        "description": "Add or remove ZIP codes, change county assignments",
+        "allowed_roles": ["gcp_admin"],
+        "validation": [
+          "ZIP codes being added not assigned to another territory",
+          "ZIP codes being removed — opportunities in those ZIPs reassigned"
+        ],
+        "impact_analysis": "Show number of opportunities and deals affected by the change before confirming"
+      },
+      {
+        "operation": "reassign_territory",
+        "description": "Change the assigned rep for a territory",
+        "allowed_roles": ["gcp_admin"],
+        "validation": [
+          "New rep exists and has sales_rep role",
+          "All pipeline deals transfer to new rep",
+          "All opportunity assignments update"
+        ],
+        "escalation": {
+          "always": true,
+          "reason": "Territory reassignment always requires gcp_admin (boundary rule)",
+          "impact_report": "Number of deals, opportunities, and contractors affected"
+        }
+      },
+      {
+        "operation": "split_territory",
+        "description": "Split one territory into two — redistribute ZIP codes between original and new territory",
+        "allowed_roles": ["gcp_admin"],
+        "validation": [
+          "Both resulting territories have a valid assigned rep",
+          "All affected opportunities and deals reassigned"
+        ]
+      },
+      {
+        "operation": "merge_territories",
+        "description": "Combine two territories into one — consolidate ZIP codes under single rep",
+        "allowed_roles": ["gcp_admin"],
+        "validation": [
+          "Resulting territory has a valid assigned rep",
+          "All affected opportunities and deals consolidated"
+        ]
+      },
+      {
+        "operation": "request_territory_change",
+        "description": "Sales rep requests a territory modification — escalates to gcp_admin for approval",
+        "allowed_roles": ["sales_rep"],
+        "workflow": "Rep submits request with justification → gcp_admin reviews → approve or deny",
+        "boundary_rule": "sales_rep can request_territory_change but cannot execute it directly"
+      }
+    ]
+  },
+  "performance_metrics": {
+    "description": "Territory performance tracking for rep management and resource allocation",
+    "metrics": [
+      {
+        "metric": "pipeline_value",
+        "label": "Pipeline Value",
+        "description": "Total and weighted pipeline value in territory",
+        "source": "SAINT_PIPELINE"
+      },
+      {
+        "metric": "opportunities_count",
+        "label": "Active Opportunities",
+        "description": "Number of active (non-archived) opportunities in territory",
+        "source": "SAINT_OPP_SCRAPER"
+      },
+      {
+        "metric": "hot_opportunities",
+        "label": "Hot Opportunities",
+        "description": "Opportunities with score >= 80",
+        "source": "SAINT_OPP_SCRAPER"
+      },
+      {
+        "metric": "conversion_rate",
+        "label": "Lead-to-Deal Conversion",
+        "description": "Percentage of opportunities that become pipeline deals",
+        "source": "SAINT_PIPELINE + SAINT_OPP_SCRAPER"
+      },
+      {
+        "metric": "win_rate",
+        "label": "Win Rate",
+        "description": "Closed-won / (closed-won + closed-lost) in territory",
+        "source": "SAINT_PIPELINE"
+      },
+      {
+        "metric": "revenue_closed",
+        "label": "Revenue Closed",
+        "description": "Total value of closed-won deals in territory",
+        "source": "SAINT_PIPELINE"
+      },
+      {
+        "metric": "average_deal_size",
+        "label": "Avg Deal Size",
+        "description": "Average value of closed-won deals",
+        "source": "SAINT_PIPELINE"
+      },
+      {
+        "metric": "average_sales_cycle",
+        "label": "Avg Sales Cycle",
+        "description": "Average days from lead to close",
+        "source": "SAINT_PIPELINE"
+      },
+      {
+        "metric": "activity_rate",
+        "label": "Activity Rate",
+        "description": "Sales activities logged per week",
+        "source": "SAINT_PIPELINE activity logs"
+      },
+      {
+        "metric": "quota_attainment",
+        "label": "Quota Attainment",
+        "description": "Revenue closed / quota target — percentage",
+        "source": "SAINT_PIPELINE + territory quota setting"
+      }
+    ],
+    "comparison": {
+      "description": "Compare territory performance across reps, districts, and regions",
+      "views": ["Territory vs territory", "Rep vs rep", "District vs district", "Period over period"]
+    }
+  },
+  "data_model": {
+    "territory": {
+      "id": "uuid",
+      "name": "string",
+      "code": "string — short code (e.g., PHL-WEST)",
+      "region": "string",
+      "district": "string",
+      "assigned_rep_id": "uuid — primary assigned sales rep",
+      "backup_rep_id": "uuid | null — backup coverage",
+      "zip_codes": "array of strings — all ZIP codes in territory",
+      "counties": "array of strings — county names (informational, ZIPs are authoritative)",
+      "states": "array of strings — state abbreviations",
+      "center_lat": "number — geographic center latitude",
+      "center_lng": "number — geographic center longitude",
+      "quota": "number — annual revenue quota in USD",
+      "active": "boolean",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "audit_trail": "array — append-only log"
+    },
+    "territory_change_request": {
+      "id": "uuid",
+      "requested_by": "uuid — sales rep who requested",
+      "territory_id": "uuid",
+      "change_type": "add_zips | remove_zips | reassign | split | merge",
+      "justification": "string",
+      "proposed_changes": "object — specific changes requested",
+      "status": "pending | approved | denied",
+      "reviewed_by": "uuid | null — admin who reviewed",
+      "review_notes": "string | null",
+      "created_at": "ISO8601",
+      "resolved_at": "ISO8601 | null"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic territory data for demo mode.",
+    "territories": [
+      {
+        "name": "Philadelphia Central",
+        "code": "PHL-CTR",
+        "region": "Mid-Atlantic",
+        "district": "Greater Philadelphia",
+        "assigned_rep": "Marcus Rivera",
+        "zip_count": 28,
+        "sample_zips": ["19101", "19102", "19103", "19104", "19106", "19107", "19109"],
+        "counties": ["Philadelphia"],
+        "quota": 5000000,
+        "pipeline_value": 3870000,
+        "opportunities": 12,
+        "hot_opps": 3
+      },
+      {
+        "name": "Montgomery County",
+        "code": "PHL-MONT",
+        "region": "Mid-Atlantic",
+        "district": "Greater Philadelphia",
+        "assigned_rep": "Lisa Park",
+        "zip_count": 42,
+        "sample_zips": ["19401", "19403", "19406", "19428", "19446"],
+        "counties": ["Montgomery"],
+        "quota": 4000000,
+        "pipeline_value": 2100000,
+        "opportunities": 8,
+        "hot_opps": 1
+      },
+      {
+        "name": "Delaware County",
+        "code": "PHL-DEL",
+        "region": "Mid-Atlantic",
+        "district": "Greater Philadelphia",
+        "assigned_rep": "David Chen",
+        "zip_count": 35,
+        "sample_zips": ["19010", "19013", "19018", "19023", "19050", "19063"],
+        "counties": ["Delaware"],
+        "quota": 3500000,
+        "pipeline_value": 1650000,
+        "opportunities": 6,
+        "hot_opps": 2
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/territories", "description": "List territories (filtered by region, district, rep)"},
+      {"method": "POST", "path": "/api/territories", "description": "Create new territory (admin only)"},
+      {"method": "GET", "path": "/api/territories/:id", "description": "Get territory detail with metrics"},
+      {"method": "PATCH", "path": "/api/territories/:id", "description": "Update territory (modify ZIPs, reassign rep)"},
+      {"method": "POST", "path": "/api/territories/:id/split", "description": "Split territory into two"},
+      {"method": "POST", "path": "/api/territories/merge", "description": "Merge two territories"},
+      {"method": "GET", "path": "/api/territories/:id/metrics", "description": "Get territory performance metrics"},
+      {"method": "GET", "path": "/api/territories/:id/opportunities", "description": "Get opportunities in territory"},
+      {"method": "GET", "path": "/api/territories/:id/pipeline", "description": "Get pipeline deals in territory"},
+      {"method": "GET", "path": "/api/territories/map-data", "description": "Get GeoJSON boundaries for all territories"},
+      {"method": "GET", "path": "/api/territories/coverage-gaps", "description": "Get unassigned ZIP codes"},
+      {"method": "POST", "path": "/api/territories/change-requests", "description": "Submit territory change request"},
+      {"method": "GET", "path": "/api/territories/change-requests", "description": "List pending change requests (admin)"},
+      {"method": "PATCH", "path": "/api/territories/change-requests/:id", "description": "Approve/deny change request (admin)"},
+      {"method": "GET", "path": "/api/territories/lookup/:zip", "description": "Lookup territory by ZIP code"},
+      {"method": "GET", "path": "/api/territories/comparison", "description": "Compare metrics across territories"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTTerritories.jsx",
+    "description": "Territory management interface. Interactive map with territory boundaries, opportunity density, and pipeline heat maps. Territory detail with performance metrics. Territory operations (create, modify, reassign, split, merge) for admins. All actions validated through kernel.",
+    "exports": [
+      "SAINTTerritories — main entity component (map + management + routing)",
+      "TerritoryMap — interactive Mapbox map with territory boundaries and overlays",
+      "TerritoryList — table of territories with metrics and assigned reps",
+      "TerritoryDetail — full territory view with metrics, opportunities, and pipeline",
+      "TerritoryEditor — create/modify territory with ZIP code picker on map",
+      "TerritoryComparison — side-by-side territory performance comparison",
+      "CoverageGapView — unassigned ZIP codes highlighted on map",
+      "ChangeRequestForm — sales rep territory change request submission",
+      "ChangeRequestQueue — admin queue for pending change requests",
+      "PerformanceScorecard — territory KPI dashboard with gauges and trends"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — VR-SAINT-003 territory compliance)",
+      "SAINTAuth (user identity, territory assignment)",
+      "SAINT_OPP_SCRAPER (opportunity data for density maps)",
+      "SAINT_PIPELINE (pipeline data for territory metrics)",
+      "Mapbox GL JS (territory mapping)"
+    ],
+    "views": {
+      "sales_rep": "Own territory — view metrics, opportunities, pipeline. Request changes.",
+      "gcp_admin": "Full access — all territories, create/modify/reassign, manage change requests, comparison",
+      "gcp_engineer": "No access — kernel DENIES load_entity for this role",
+      "contractor": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained component loaded by SAINTShell entity loader. Territory enforcement via VR-SAINT-003 at kernel level."
+  }
+}
