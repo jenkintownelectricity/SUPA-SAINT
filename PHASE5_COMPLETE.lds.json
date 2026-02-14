@@ -1,0 +1,89 @@
+{
+  "_lds": {
+    "uuid": "saint-phase5-complete-2026-001",
+    "type": "phase_summary",
+    "version": "1.0.0",
+    "created": "2026-02-14T21:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 5,
+    "status": "COMPLETE",
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-005",
+      "status": "AUTHORIZED"
+    }
+  },
+  "summary": {
+    "phase_name": "ENTERPRISE",
+    "entities_created": 3,
+    "files": [
+      "SAINT_WHITE_LABEL.lds.json — Branding engine with 5 overridable categories (identity, colors, typography, domain, email), 6 brand management operations, multi-tenant domain-based routing, 4 preset themes, non-overridable safeguards (kernel, invariants, audit, permissions, data isolation).",
+      "SAINT_SSO.lds.json — Enterprise SSO with SAML 2.0 (primary) and OIDC (secondary), IDP group-to-role mapping, JIT user provisioning with attribute sync, session management (8hr duration, 30min idle timeout, force reauth), single logout, multi-tenant SSO per domain, soft deactivation on group removal.",
+      "SAINT_API.lds.json — External API layer with 8 API resources covering all Phase 2-4 entities, role-scoped API keys (live/test), 3-tier rate limiting (60/300/1000 rpm), 12 webhook event types with HMAC signing, usage metering dashboard, cursor-based pagination, interactive API docs."
+    ],
+    "key_features_delivered": [
+      "White-label: 5 overridable categories, 6 management operations, domain-based routing",
+      "White-label: 4 preset themes (ValidKernel Dark, Saint-Gobain Blue, GCP Green, Light Professional)",
+      "White-label: Live preview with side-by-side comparison before activation",
+      "White-label: Non-overridable safeguards — kernel, invariants, audit, permissions cannot be changed",
+      "SSO: SAML 2.0 with RSA-SHA256 signing, 7 attribute mappings",
+      "SSO: OIDC with PKCE, 4 claim mappings",
+      "SSO: IDP group-to-SAINT-role mapping with conflict resolution",
+      "SSO: JIT provisioning with attribute sync on each login",
+      "SSO: Soft deactivation — removed from IDP groups = deactivated in SAINT",
+      "SSO: Session management — 8hr duration, 30min idle, force reauth for sensitive actions",
+      "SSO: Multi-tenant SSO — each domain can have its own IDP",
+      "API: 8 resource groups exposing all Phase 2-4 entity operations",
+      "API: Role-scoped API keys (live and test types)",
+      "API: 3-tier rate limiting with standard rate limit headers",
+      "API: 12 webhook events with HMAC-SHA256 signature verification",
+      "API: Cursor-based pagination, filtering, sorting conventions",
+      "API: Usage metering per key with 30-day rolling dashboard",
+      "API: Key rotation with grace period for zero-downtime migration",
+      "All 3 entities admin-only (gcp_admin) — enterprise configuration",
+      "Every API request passes through kernel validation — API is a boundary, not a bypass"
+    ],
+    "role_access_matrix": {
+      "gcp_admin": {
+        "SAINT_WHITE_LABEL": "Full access — create, edit, preview, activate brands",
+        "SAINT_SSO": "Full access — configure SSO, manage group mapping, view users",
+        "SAINT_API": "Full access — manage keys, webhooks, view usage"
+      },
+      "gcp_engineer": {"all": "DENIED — enterprise config is admin-only"},
+      "sales_rep": {"all": "DENIED — enterprise config is admin-only"},
+      "contractor": {"all": "DENIED — enterprise config is admin-only"}
+    }
+  },
+  "phase_verification": {
+    "checklist": [
+      {"item": "SAINT_WHITE_LABEL.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_SSO.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_API.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "All entities reference parent saint-master-2026-001", "status": "PASS"},
+      {"item": "All entities declare phase: 5 with correct sequence numbers", "status": "PASS"},
+      {"item": "All entities have react_component block with exports", "status": "PASS"},
+      {"item": "All entities have demo_data for demo mode", "status": "PASS"},
+      {"item": "All entities have backend API endpoints defined", "status": "PASS"},
+      {"item": "White-label non-overridable elements enforce kernel safety", "status": "PASS"},
+      {"item": "SSO extends auth system as third mode", "status": "PASS"},
+      {"item": "API kernel validation documented for every request", "status": "PASS"},
+      {"item": "Entity filenames match SAINT_MASTER_INDEX.lds.json manifest", "status": "PASS"}
+    ]
+  },
+  "next_phase_instructions": {
+    "phase": 6,
+    "name": "OPERATIONS",
+    "l0_command": "L0-CMD-2026-0214-006 (to be issued)",
+    "entities_to_build": [
+      "SAINT_ADMIN.lds.json — Admin console for platform management. User management, system settings, audit log viewer, platform health monitoring.",
+      "SAINT_BILLING.lds.json — Subscription management and billing. Stripe integration, usage-based metering, invoice generation, plan management.",
+      "SAINT_INTEGRATIONS.lds.json — Third-party integration management. Pre-built connectors (Salesforce, Procore, PlanGrid, Bluebeam), custom integration builder, integration health monitoring."
+    ],
+    "dependencies": "All Phase 1-5 entities. Admin manages users and system. Billing ties to pricing model. Integrations extend API capabilities.",
+    "command_for_next_chat": "Continue building PROJECT SAINT Phase 6. Reference SAINT_MASTER_INDEX.lds.json and all Phase 1-5 entities. Build the OPERATIONS tier: Admin, Billing, and Integrations. Each as a self-contained .lds.json entity file. THIS IS THE FINAL PHASE."
+  },
+  "assembly_preview": {
+    "phases_complete": "5 of 6",
+    "entities_complete": "16 of 18 total"
+  }
+}

@@ -1,0 +1,360 @@
+{
+  "_lds": {
+    "uuid": "saint-api-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T20:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 5,
+    "sequence": 3,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-005",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT External API",
+    "description": "External RESTful API layer for PROJECT SAINT. Enables third-party integrations, external data access, and webhook-driven workflows. API key management, rate limiting, usage metering, and developer documentation. Every API call passes through kernel validation.",
+    "principle": "The API is a boundary, not a bypass. Every API request is validated by the kernel with the same rules as UI actions. API keys carry role-scoped permissions. No API key can exceed the permissions of its associated role."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — every API request validated via CHECK-THEN-ACT",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — API keys scoped to role permissions",
+    "auth": "SAINT_AUTH.lds.json — API key authentication alongside session auth",
+    "all_entities": "API exposes operations from all Phase 2-4 entities"
+  },
+  "api_design": {
+    "version": "v1",
+    "base_url": "https://{domain}/api/v1",
+    "format": "JSON",
+    "authentication": {
+      "method": "Bearer token (API key)",
+      "header": "Authorization: Bearer {api_key}",
+      "alternative": "X-API-Key: {api_key}",
+      "key_format": "saint_live_{32_char_random} or saint_test_{32_char_random}"
+    },
+    "conventions": {
+      "naming": "snake_case for all fields",
+      "pagination": "Cursor-based: ?cursor={cursor}&limit={limit} (default limit 50, max 100)",
+      "filtering": "Query params: ?status=active&territory_id={id}",
+      "sorting": "?sort=created_at&order=desc",
+      "dates": "ISO 8601 format (2026-02-14T12:00:00Z)",
+      "errors": {
+        "format": {"error": {"code": "string", "message": "string", "details": "object | null"}},
+        "codes": {
+          "400": "Bad Request — invalid parameters",
+          "401": "Unauthorized — missing or invalid API key",
+          "403": "Forbidden — API key lacks permission for this action (kernel DENIED)",
+          "404": "Not Found — resource does not exist",
+          "409": "Conflict — state conflict (e.g., invalid stage transition)",
+          "422": "Unprocessable Entity — validation failed",
+          "429": "Too Many Requests — rate limit exceeded",
+          "500": "Internal Server Error"
+        }
+      }
+    }
+  },
+  "api_resources": {
+    "description": "API resources map to SAINT entity operations. Each resource respects the same kernel validation as the UI.",
+    "resources": [
+      {
+        "resource": "opportunities",
+        "entity": "SAINT_OPP_SCRAPER",
+        "endpoints": [
+          {"method": "GET", "path": "/opportunities", "description": "List opportunities", "scoping": "Territory-filtered for sales_rep keys"},
+          {"method": "GET", "path": "/opportunities/:id", "description": "Get opportunity detail"},
+          {"method": "PATCH", "path": "/opportunities/:id", "description": "Update opportunity status/notes"}
+        ]
+      },
+      {
+        "resource": "deals",
+        "entity": "SAINT_PIPELINE",
+        "endpoints": [
+          {"method": "GET", "path": "/deals", "description": "List pipeline deals"},
+          {"method": "POST", "path": "/deals", "description": "Create deal"},
+          {"method": "GET", "path": "/deals/:id", "description": "Get deal detail"},
+          {"method": "PATCH", "path": "/deals/:id", "description": "Update deal (stage transition, field updates)"},
+          {"method": "POST", "path": "/deals/:id/activities", "description": "Log activity against deal"}
+        ]
+      },
+      {
+        "resource": "shop_drawings",
+        "entity": "SAINT_SHOP_DRAWINGS",
+        "endpoints": [
+          {"method": "GET", "path": "/shop-drawings", "description": "List shop drawings"},
+          {"method": "GET", "path": "/shop-drawings/:id", "description": "Get drawing detail"},
+          {"method": "GET", "path": "/shop-drawings/:id/dxf", "description": "Download DXF file"},
+          {"method": "GET", "path": "/shop-drawings/:id/pdf", "description": "Download PDF export"},
+          {"method": "GET", "path": "/shop-drawings/:id/material-schedule", "description": "Get material schedule"}
+        ]
+      },
+      {
+        "resource": "products",
+        "entity": "SAINT_PRODUCT_CONFIG",
+        "endpoints": [
+          {"method": "GET", "path": "/products", "description": "List products (catalog)"},
+          {"method": "GET", "path": "/products/:id", "description": "Get product detail with specifications"},
+          {"method": "GET", "path": "/products/:id/compatible", "description": "Get compatible products"},
+          {"method": "GET", "path": "/categories", "description": "List product categories"}
+        ]
+      },
+      {
+        "resource": "warranty",
+        "entity": "SAINT_WARRANTY",
+        "endpoints": [
+          {"method": "GET", "path": "/warranty/records", "description": "List warranty records"},
+          {"method": "GET", "path": "/warranty/claims", "description": "List warranty claims"},
+          {"method": "POST", "path": "/warranty/claims", "description": "Submit warranty claim"},
+          {"method": "GET", "path": "/warranty/claims/:id", "description": "Get claim detail"}
+        ]
+      },
+      {
+        "resource": "submittals",
+        "entity": "SAINT_SUBMITTALS",
+        "endpoints": [
+          {"method": "GET", "path": "/submittals", "description": "List submittal packages"},
+          {"method": "GET", "path": "/submittals/:id", "description": "Get package detail"},
+          {"method": "GET", "path": "/submittals/:id/download", "description": "Download compiled PDF"}
+        ]
+      },
+      {
+        "resource": "projects",
+        "entity": "SAINT_CONTRACTOR_DASH",
+        "endpoints": [
+          {"method": "GET", "path": "/projects", "description": "List projects"},
+          {"method": "GET", "path": "/projects/:id", "description": "Get project detail"}
+        ]
+      },
+      {
+        "resource": "territories",
+        "entity": "SAINT_TERRITORIES",
+        "endpoints": [
+          {"method": "GET", "path": "/territories", "description": "List territories"},
+          {"method": "GET", "path": "/territories/:id", "description": "Get territory detail with metrics"},
+          {"method": "GET", "path": "/territories/lookup/:zip", "description": "Lookup territory by ZIP code"}
+        ]
+      }
+    ]
+  },
+  "api_key_management": {
+    "description": "API keys are issued by gcp_admin and scoped to a specific role's permissions",
+    "key_types": [
+      {
+        "type": "live",
+        "prefix": "saint_live_",
+        "description": "Production API key — accesses real data",
+        "environment": "production"
+      },
+      {
+        "type": "test",
+        "prefix": "saint_test_",
+        "description": "Test API key — accesses demo/sandbox data only",
+        "environment": "test"
+      }
+    ],
+    "key_properties": {
+      "role_scope": "Each key is bound to a SAINT role (gcp_admin, gcp_engineer, sales_rep, contractor)",
+      "permission_inheritance": "Key inherits all permissions from its role — same as a logged-in user with that role",
+      "resource_restriction": "Optionally restrict key to specific resources (e.g., only /products and /shop-drawings)",
+      "ip_whitelist": "Optional IP whitelist for additional security",
+      "expiration": "Keys can have expiration date or be non-expiring (revocable)",
+      "rate_limit_override": "Custom rate limit per key (within tier ceiling)"
+    },
+    "operations": [
+      {"operation": "create_key", "allowed_roles": ["gcp_admin"], "description": "Generate new API key with role scope and optional restrictions"},
+      {"operation": "list_keys", "allowed_roles": ["gcp_admin"], "description": "List all API keys with usage stats"},
+      {"operation": "revoke_key", "allowed_roles": ["gcp_admin"], "description": "Immediately revoke an API key"},
+      {"operation": "rotate_key", "allowed_roles": ["gcp_admin"], "description": "Generate new key and deprecate old one (grace period)"},
+      {"operation": "view_usage", "allowed_roles": ["gcp_admin"], "description": "View API key usage metrics and logs"}
+    ]
+  },
+  "rate_limiting": {
+    "description": "Rate limiting by API key and IP to prevent abuse",
+    "tiers": [
+      {"tier": "standard", "requests_per_minute": 60, "requests_per_day": 10000, "description": "Default for all API keys"},
+      {"tier": "premium", "requests_per_minute": 300, "requests_per_day": 100000, "description": "Enterprise tier clients"},
+      {"tier": "internal", "requests_per_minute": 1000, "requests_per_day": "unlimited", "description": "Internal SAINT-to-SAINT API calls"}
+    ],
+    "headers": {
+      "X-RateLimit-Limit": "Requests allowed per window",
+      "X-RateLimit-Remaining": "Requests remaining in current window",
+      "X-RateLimit-Reset": "Unix timestamp when window resets",
+      "Retry-After": "Seconds to wait (included in 429 responses)"
+    },
+    "enforcement": "Sliding window counter per API key"
+  },
+  "webhooks": {
+    "description": "Webhook subscriptions for real-time event notifications to external systems",
+    "events": [
+      {"event": "opportunity.created", "entity": "OPP_SCRAPER", "description": "New opportunity discovered"},
+      {"event": "opportunity.scored", "entity": "OPP_SCRAPER", "description": "Opportunity score updated"},
+      {"event": "deal.stage_changed", "entity": "PIPELINE", "description": "Deal moved to new stage"},
+      {"event": "deal.closed_won", "entity": "PIPELINE", "description": "Deal closed as won"},
+      {"event": "deal.closed_lost", "entity": "PIPELINE", "description": "Deal closed as lost"},
+      {"event": "drawing.approved", "entity": "SHOP_DRAWINGS", "description": "Shop drawing approved"},
+      {"event": "drawing.delivered", "entity": "SHOP_DRAWINGS", "description": "Shop drawing delivered to contractor"},
+      {"event": "warranty.claim_submitted", "entity": "WARRANTY", "description": "New warranty claim submitted"},
+      {"event": "warranty.claim_resolved", "entity": "WARRANTY", "description": "Warranty claim resolved"},
+      {"event": "submittal.approved", "entity": "SUBMITTALS", "description": "Submittal package approved"},
+      {"event": "submittal.rejected", "entity": "SUBMITTALS", "description": "Submittal package rejected"},
+      {"event": "project.status_changed", "entity": "CONTRACTOR_DASH", "description": "Project status updated"}
+    ],
+    "webhook_config": {
+      "url": "HTTPS endpoint to receive webhook payload",
+      "secret": "Shared secret for HMAC-SHA256 signature verification",
+      "events": "Array of event types to subscribe to",
+      "active": "Boolean — enable/disable without deleting",
+      "retry_policy": "3 retries with exponential backoff (1s, 5s, 30s)"
+    },
+    "payload_format": {
+      "id": "Unique event ID",
+      "event": "Event type string",
+      "timestamp": "ISO 8601 when event occurred",
+      "data": "Event-specific payload",
+      "signature": "HMAC-SHA256 of payload using webhook secret"
+    }
+  },
+  "usage_metering": {
+    "description": "Track API usage per key for billing and analytics",
+    "metrics_tracked": [
+      "requests_total",
+      "requests_by_endpoint",
+      "requests_by_method",
+      "errors_by_status",
+      "average_response_time",
+      "bandwidth_bytes"
+    ],
+    "reporting_period": "Rolling 30-day window with daily granularity",
+    "usage_dashboard": "Admin view of API usage per key with charts and export"
+  },
+  "data_model": {
+    "api_key": {
+      "id": "uuid",
+      "key_hash": "string — SHA-256 hash of key (actual key shown only on creation)",
+      "key_prefix": "string — first 8 chars for identification (e.g., saint_live_abc12345)",
+      "name": "string — descriptive name for the key",
+      "type": "live | test",
+      "role_scope": "gcp_admin | gcp_engineer | sales_rep | contractor",
+      "resource_restrictions": "array | null — specific resources key can access",
+      "ip_whitelist": "array | null — allowed IP addresses",
+      "rate_limit_tier": "standard | premium | internal",
+      "expires_at": "ISO8601 | null",
+      "revoked": "boolean",
+      "revoked_at": "ISO8601 | null",
+      "last_used_at": "ISO8601 | null",
+      "total_requests": "integer",
+      "created_by": "uuid",
+      "created_at": "ISO8601"
+    },
+    "webhook_subscription": {
+      "id": "uuid",
+      "name": "string",
+      "url": "string — HTTPS endpoint",
+      "secret_hash": "string",
+      "events": "array — subscribed event types",
+      "active": "boolean",
+      "last_triggered_at": "ISO8601 | null",
+      "failure_count": "integer — consecutive failures",
+      "created_by": "uuid",
+      "created_at": "ISO8601"
+    },
+    "api_log": {
+      "id": "uuid",
+      "api_key_id": "uuid",
+      "method": "string",
+      "path": "string",
+      "status_code": "integer",
+      "response_time_ms": "integer",
+      "request_body_size": "integer",
+      "response_body_size": "integer",
+      "ip_address": "string",
+      "user_agent": "string",
+      "kernel_result": "ALLOWED | DENIED",
+      "timestamp": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic API data for demo mode.",
+    "api_keys": [
+      {
+        "name": "CRM Integration Key",
+        "type": "live",
+        "role_scope": "sales_rep",
+        "resources": ["opportunities", "deals", "territories"],
+        "total_requests": 14280,
+        "last_used": "2 minutes ago"
+      },
+      {
+        "name": "Contractor Portal Embed",
+        "type": "live",
+        "role_scope": "contractor",
+        "resources": ["projects", "shop_drawings", "warranty"],
+        "total_requests": 6540,
+        "last_used": "1 hour ago"
+      },
+      {
+        "name": "Development Test Key",
+        "type": "test",
+        "role_scope": "gcp_admin",
+        "resources": null,
+        "total_requests": 892,
+        "last_used": "3 days ago"
+      }
+    ],
+    "webhooks": [
+      {
+        "name": "Slack — Deal Alerts",
+        "url": "https://hooks.slack.example/saint-deals",
+        "events": ["deal.closed_won", "deal.closed_lost"],
+        "active": true
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/keys", "description": "List API keys (admin only)"},
+      {"method": "POST", "path": "/api/keys", "description": "Create new API key"},
+      {"method": "GET", "path": "/api/keys/:id", "description": "Get API key detail and usage"},
+      {"method": "DELETE", "path": "/api/keys/:id", "description": "Revoke API key"},
+      {"method": "POST", "path": "/api/keys/:id/rotate", "description": "Rotate API key"},
+      {"method": "GET", "path": "/api/keys/:id/usage", "description": "Get API key usage metrics"},
+      {"method": "GET", "path": "/api/webhooks", "description": "List webhook subscriptions"},
+      {"method": "POST", "path": "/api/webhooks", "description": "Create webhook subscription"},
+      {"method": "GET", "path": "/api/webhooks/:id", "description": "Get webhook detail"},
+      {"method": "PATCH", "path": "/api/webhooks/:id", "description": "Update webhook subscription"},
+      {"method": "DELETE", "path": "/api/webhooks/:id", "description": "Delete webhook subscription"},
+      {"method": "POST", "path": "/api/webhooks/:id/test", "description": "Send test event to webhook"},
+      {"method": "GET", "path": "/api/usage", "description": "Get API usage dashboard data"},
+      {"method": "GET", "path": "/api/usage/logs", "description": "Get API request logs"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTAPI.jsx",
+    "description": "API management interface. Key management with creation, revocation, and rotation. Webhook subscription management. Usage dashboard with charts. API documentation browser. All admin-only.",
+    "exports": [
+      "SAINTAPI — main entity component (API management + routing)",
+      "APIKeyList — list of API keys with usage stats and status",
+      "APIKeyCreator — new key creation form with role scope and restrictions",
+      "APIKeyDetail — key detail with usage chart, logs, and revoke/rotate actions",
+      "WebhookList — list of webhook subscriptions with status",
+      "WebhookEditor — create/edit webhook with event picker and test button",
+      "UsageDashboard — API usage charts (requests, latency, errors, bandwidth)",
+      "RequestLogViewer — searchable API request log table",
+      "APIDocsBrowser — interactive API documentation with try-it-now",
+      "RateLimitConfig — rate limit tier configuration per key"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — every API request validated)",
+      "SAINTAuth (admin-only access to management UI)",
+      "All Phase 2-4 entities (API routes map to entity operations)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — manage keys, webhooks, view usage, configure rate limits",
+      "gcp_engineer": "No access — kernel DENIES",
+      "sales_rep": "No access — kernel DENIES",
+      "contractor": "No access — kernel DENIES"
+    },
+    "code_reference": "Follows TradeOS entity pattern. API layer is a boundary — every request passes through kernel validation before reaching entity logic."
+  }
+}

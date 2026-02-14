@@ -1,0 +1,256 @@
+{
+  "_lds": {
+    "uuid": "saint-white-label-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T20:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 5,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-005",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT White Label",
+    "description": "White-label branding engine for PROJECT SAINT. Enables Saint-Gobain to deploy branded instances for different business units, partners, or enterprise clients. Theme configuration, logo/color/domain swapping, brand preview, and client branding management. No code changes required — branding via config entity swap.",
+    "principle": "Brand swapping changes what users SEE, never what the kernel DOES. Kernel behavior, invariant enforcement, and audit logging are NOT overridable. Only visual elements are white-label targets."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — kernel behavior is non-overridable by white-label config",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — only gcp_admin can manage branding",
+    "shell": "SAINT_SHELL.lds.json — shell theming system consumes white-label config",
+    "auth": "SAINT_AUTH.lds.json — login screen branding panel uses white-label config"
+  },
+  "branding_configuration": {
+    "description": "Complete set of configurable brand elements. Each brand config is a self-contained entity that replaces the default ValidKernel theme.",
+    "overridable_elements": [
+      {
+        "category": "identity",
+        "elements": [
+          {"key": "app_name", "type": "string", "default": "PROJECT SAINT", "description": "Application name shown in header, browser title, emails"},
+          {"key": "tagline", "type": "string", "default": "Building Envelope Intelligence", "description": "Subtitle shown on login screen and about page"},
+          {"key": "logo_url", "type": "url", "default": "/assets/saint-logo.svg", "description": "Primary logo — used in sidebar header and login screen"},
+          {"key": "logo_icon_url", "type": "url", "default": "/assets/saint-icon.svg", "description": "Icon-only logo — used in collapsed sidebar and favicon"},
+          {"key": "favicon_url", "type": "url", "default": "/assets/favicon.ico", "description": "Browser tab favicon"},
+          {"key": "email_logo_url", "type": "url", "default": "/assets/saint-email-logo.png", "description": "Logo used in email templates (PNG required for email compatibility)"},
+          {"key": "login_background_image", "type": "url", "default": null, "description": "Background image for login screen branding panel (optional)"}
+        ]
+      },
+      {
+        "category": "colors",
+        "elements": [
+          {"key": "color_primary", "type": "hex", "default": "#60a5fa", "description": "Primary accent color — buttons, links, active states"},
+          {"key": "color_secondary", "type": "hex", "default": "#34d399", "description": "Secondary accent — success states, positive indicators"},
+          {"key": "color_background", "type": "gradient_or_hex", "default": "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)", "description": "App background gradient or solid color"},
+          {"key": "color_sidebar", "type": "hex_with_alpha", "default": "rgba(0,0,0,0.3)", "description": "Sidebar background"},
+          {"key": "color_header", "type": "hex_with_alpha", "default": "rgba(255,255,255,0.06)", "description": "Header bar background"},
+          {"key": "color_text_primary", "type": "hex", "default": "#ffffff", "description": "Primary text color"},
+          {"key": "color_text_secondary", "type": "hex_with_alpha", "default": "rgba(255,255,255,0.6)", "description": "Secondary text color"},
+          {"key": "color_glass", "type": "hex_with_alpha", "default": "rgba(255,255,255,0.06)", "description": "Glassmorphism panel background"},
+          {"key": "color_glass_border", "type": "hex_with_alpha", "default": "rgba(255,255,255,0.1)", "description": "Glassmorphism panel border"},
+          {"key": "color_warning", "type": "hex", "default": "#fbbf24", "description": "Warning color"},
+          {"key": "color_error", "type": "hex", "default": "#f87171", "description": "Error/danger color"}
+        ]
+      },
+      {
+        "category": "typography",
+        "elements": [
+          {"key": "font_family", "type": "string", "default": "Inter, system-ui, sans-serif", "description": "Primary font family"},
+          {"key": "font_family_mono", "type": "string", "default": "JetBrains Mono, monospace", "description": "Monospace font for code/data"},
+          {"key": "font_size_base", "type": "string", "default": "14px", "description": "Base font size"}
+        ]
+      },
+      {
+        "category": "domain",
+        "elements": [
+          {"key": "custom_domain", "type": "string", "default": "saint.validkernel.com", "description": "Custom domain for this brand instance"},
+          {"key": "support_email", "type": "email", "default": "support@validkernel.com", "description": "Support email shown in app"},
+          {"key": "support_url", "type": "url", "default": null, "description": "Link to support/help desk"},
+          {"key": "privacy_url", "type": "url", "default": null, "description": "Privacy policy URL"},
+          {"key": "terms_url", "type": "url", "default": null, "description": "Terms of service URL"}
+        ]
+      },
+      {
+        "category": "email_templates",
+        "elements": [
+          {"key": "email_header_color", "type": "hex", "default": "#1a1a2e", "description": "Email header background color"},
+          {"key": "email_footer_text", "type": "string", "default": "Powered by PROJECT SAINT", "description": "Email footer text"},
+          {"key": "email_from_name", "type": "string", "default": "PROJECT SAINT", "description": "Sender name for system emails"}
+        ]
+      }
+    ],
+    "non_overridable": [
+      {"element": "kernel_behavior", "reason": "Kernel validation logic is invariant — cannot be altered by branding"},
+      {"element": "invariant_enforcement", "reason": "All 8 invariants enforced regardless of brand"},
+      {"element": "audit_logging", "reason": "Audit trail active for all brand instances"},
+      {"element": "role_permissions", "reason": "Boundary definitions are immutable — branding cannot add/remove permissions"},
+      {"element": "data_isolation", "reason": "Tenant isolation enforced regardless of brand"}
+    ]
+  },
+  "brand_management": {
+    "description": "Admin interface for managing brand configurations",
+    "operations": [
+      {
+        "operation": "create_brand",
+        "description": "Create a new brand configuration with custom identity, colors, and domain",
+        "allowed_roles": ["gcp_admin"],
+        "workflow": "Fill brand config form → preview → save → activate"
+      },
+      {
+        "operation": "edit_brand",
+        "description": "Modify existing brand configuration",
+        "allowed_roles": ["gcp_admin"],
+        "workflow": "Edit fields → live preview → save"
+      },
+      {
+        "operation": "preview_brand",
+        "description": "Preview how the app looks with a brand configuration before activating",
+        "allowed_roles": ["gcp_admin"],
+        "features": ["Side-by-side comparison with current brand", "Preview all key screens (login, dashboard, sidebar)", "Mobile and desktop preview"]
+      },
+      {
+        "operation": "activate_brand",
+        "description": "Set a brand configuration as active for a domain or tenant",
+        "allowed_roles": ["gcp_admin"],
+        "validation": ["All required fields populated", "Logo files uploaded and accessible", "Custom domain DNS configured (if applicable)"]
+      },
+      {
+        "operation": "clone_brand",
+        "description": "Clone an existing brand configuration as a starting point for a new brand",
+        "allowed_roles": ["gcp_admin"]
+      },
+      {
+        "operation": "export_brand",
+        "description": "Export brand configuration as JSON for backup or transfer",
+        "allowed_roles": ["gcp_admin"],
+        "format": "JSON file with all brand config values and asset URLs"
+      }
+    ]
+  },
+  "multi_tenant_branding": {
+    "description": "How white-label branding works in a multi-tenant deployment",
+    "routing": {
+      "strategy": "Domain-based brand resolution",
+      "flow": "Request arrives → resolve domain → load brand config → apply theme → render app",
+      "examples": [
+        {"domain": "saint.validkernel.com", "brand": "ValidKernel Default"},
+        {"domain": "tools.gcpat.com", "brand": "GCP Applied Technologies"},
+        {"domain": "envelope.certainteed.com", "brand": "CertainTeed (Saint-Gobain)"}
+      ]
+    },
+    "isolation": {
+      "data": "Brand config is visual only — data isolation is per-tenant, not per-brand",
+      "kernel": "Same kernel validates all tenants regardless of brand",
+      "audit": "Audit logs include brand/tenant context for traceability"
+    }
+  },
+  "preset_themes": {
+    "description": "Pre-built brand themes that can be used as-is or as starting points",
+    "themes": [
+      {
+        "id": "validkernel_dark",
+        "name": "ValidKernel Dark (Default)",
+        "description": "Dark glassmorphism theme with blue accents",
+        "preview_colors": {"bg": "#1a1a2e", "accent": "#60a5fa", "text": "#ffffff"}
+      },
+      {
+        "id": "saint_gobain_blue",
+        "name": "Saint-Gobain Blue",
+        "description": "Saint-Gobain corporate blue branding",
+        "preview_colors": {"bg": "#003B71", "accent": "#0070C0", "text": "#ffffff"}
+      },
+      {
+        "id": "gcp_green",
+        "name": "GCP Applied Technologies",
+        "description": "GCP green branding with professional styling",
+        "preview_colors": {"bg": "#1B4332", "accent": "#2D6A4F", "text": "#ffffff"}
+      },
+      {
+        "id": "light_professional",
+        "name": "Light Professional",
+        "description": "Clean light theme for enterprise deployments",
+        "preview_colors": {"bg": "#F8FAFC", "accent": "#3B82F6", "text": "#1E293B"}
+      }
+    ]
+  },
+  "data_model": {
+    "brand_config": {
+      "id": "uuid",
+      "name": "string — brand name",
+      "description": "string",
+      "domain": "string — custom domain for this brand",
+      "identity": "object — app_name, tagline, logo URLs, favicon",
+      "colors": "object — all color configuration values",
+      "typography": "object — font family and sizing",
+      "email": "object — email template overrides",
+      "links": "object — support, privacy, terms URLs",
+      "active": "boolean",
+      "activated_at": "ISO8601 | null",
+      "created_by": "uuid",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "audit_trail": "array — append-only log"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic brand configurations for demo mode.",
+    "brands": [
+      {
+        "name": "ValidKernel Default",
+        "domain": "saint.validkernel.com",
+        "active": true,
+        "theme": "validkernel_dark"
+      },
+      {
+        "name": "GCP Applied Technologies",
+        "domain": "tools.gcpat.com",
+        "active": false,
+        "theme": "gcp_green"
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/brands", "description": "List brand configurations"},
+      {"method": "POST", "path": "/api/brands", "description": "Create brand configuration"},
+      {"method": "GET", "path": "/api/brands/:id", "description": "Get brand config detail"},
+      {"method": "PATCH", "path": "/api/brands/:id", "description": "Update brand configuration"},
+      {"method": "POST", "path": "/api/brands/:id/activate", "description": "Activate brand for its domain"},
+      {"method": "POST", "path": "/api/brands/:id/clone", "description": "Clone brand configuration"},
+      {"method": "GET", "path": "/api/brands/:id/export", "description": "Export brand as JSON"},
+      {"method": "POST", "path": "/api/brands/:id/assets", "description": "Upload brand assets (logos, images)"},
+      {"method": "GET", "path": "/api/brands/resolve/:domain", "description": "Resolve brand config by domain"},
+      {"method": "GET", "path": "/api/brands/presets", "description": "List preset themes"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTWhiteLabel.jsx",
+    "description": "Brand management interface. Brand config editor with live preview. Theme preset selector. Asset uploader. Side-by-side brand comparison. Domain configuration. All admin-only.",
+    "exports": [
+      "SAINTWhiteLabel — main entity component (brand management + routing)",
+      "BrandList — list of configured brands with status",
+      "BrandEditor — full brand configuration form with all overridable elements",
+      "BrandPreview — live preview of brand applied to key screens",
+      "ThemePresetSelector — grid of preset themes with one-click application",
+      "AssetUploader — logo and image upload with crop/resize",
+      "BrandComparison — side-by-side before/after preview",
+      "DomainConfig — custom domain configuration and DNS verification",
+      "BrandExporter — export/import brand configurations"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context)",
+      "SAINTAuth (admin-only access)",
+      "SAINTShell (theme system consumer)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — create, edit, preview, activate, clone, export brands",
+      "gcp_engineer": "No access — kernel DENIES load_entity for this role",
+      "sales_rep": "No access — kernel DENIES load_entity for this role",
+      "contractor": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Brand configs stored as data, consumed by SAINTShell theme system at runtime. No code changes for brand swaps."
+  }
+}
