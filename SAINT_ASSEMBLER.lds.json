@@ -1,0 +1,86 @@
+{
+  "_lds": {
+    "uuid": "saint-assembler-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-15T12:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 7,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0215-001",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Assembler",
+    "description": "Reads all 18 entity definition files (.lds.json), extracts react_component, data_model, backend.api_endpoints, and demo_data specifications, and scaffolds a complete deployable Next.js application.",
+    "principle": "The entity files ARE the source of truth. The assembler produces code that implements what the entities define. This is extraction and scaffold, not a rewrite."
+  },
+  "input": {
+    "source_files": 18,
+    "total_size_kb": 296,
+    "phases_covered": [1, 2, 3, 4, 5, 6],
+    "entity_files": [
+      "SAINT_KERNEL.lds.json",
+      "SAINT_BOUNDARIES.lds.json",
+      "SAINT_AUTH.lds.json",
+      "SAINT_SHELL.lds.json",
+      "SAINT_MASTER_INDEX.lds.json",
+      "SAINT_SHOP_DRAWINGS.lds.json",
+      "SAINT_OPP_SCRAPER.lds.json",
+      "SAINT_PRODUCT_CONFIG.lds.json",
+      "SAINT_CONTRACTOR_DASH.lds.json",
+      "SAINT_WARRANTY.lds.json",
+      "SAINT_SUBMITTALS.lds.json",
+      "SAINT_PIPELINE.lds.json",
+      "SAINT_TERRITORIES.lds.json",
+      "SAINT_REPORTING.lds.json",
+      "SAINT_WHITE_LABEL.lds.json",
+      "SAINT_SSO.lds.json",
+      "SAINT_API.lds.json",
+      "SAINT_ADMIN.lds.json",
+      "SAINT_BILLING.lds.json",
+      "SAINT_INTEGRATIONS.lds.json"
+    ]
+  },
+  "output": {
+    "directory": "/app",
+    "framework": "Next.js 14+ (App Router)",
+    "language": "TypeScript (strict mode)",
+    "styling": "Tailwind CSS with glassmorphism",
+    "components_generated": 15,
+    "api_routes_generated": 15,
+    "total_files": 45,
+    "deployment_targets": ["Vercel", "Railway", "Docker"]
+  },
+  "build_sequence": {
+    "steps": [
+      {"step": 1, "action": "package.json + config files", "status": "COMPLETE"},
+      {"step": 2, "action": "Theme + global styles", "status": "COMPLETE"},
+      {"step": 3, "action": "Types + utilities", "status": "COMPLETE"},
+      {"step": 4, "action": "Kernel engine", "status": "COMPLETE"},
+      {"step": 5, "action": "Auth system", "status": "COMPLETE"},
+      {"step": 6, "action": "Demo data store + seed", "status": "COMPLETE"},
+      {"step": 7, "action": "Shell (sidebar, header, loader)", "status": "COMPLETE"},
+      {"step": 8, "action": "Entity components (Phase 2-6)", "status": "COMPLETE"},
+      {"step": 9, "action": "API routes", "status": "COMPLETE"},
+      {"step": 10, "action": "Deployment configs", "status": "COMPLETE"}
+    ]
+  },
+  "verification": {
+    "criteria": [
+      "npm run dev starts on localhost",
+      "Demo login works for all 4 roles",
+      "Role-aware navigation renders correctly",
+      "Entity loader loads correct component per nav",
+      "Kernel validates every action",
+      "DENIED shown with reason, not error",
+      "All 15 entities render with demo data",
+      "Glassmorphism dark theme renders",
+      "Responsive layout works",
+      "Audit log records decisions"
+    ]
+  }
+}
