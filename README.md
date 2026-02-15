@@ -60,12 +60,14 @@ SUPA-SAINT/
 │
 ├── Governance
 │   ├── L0_CMD_2026_0214_001_SAINT_SUPERAPP.md    ← Phase 1 L0 command
-│   └── L0_CMD_2026_0215_001_SAINT_ASSEMBLER.md   ← Assembly L0 command
+│   ├── L0_CMD_2026_0215_001_SAINT_ASSEMBLER.md   ← Assembly L0 command
+│   └── L0_CMD_2026_0215_002_DOCS_UPDATE.md       ← Ecosystem docs sync command
 │
 ├── Progress Tracking
 │   └── .validkernel/
 │       └── PROGRESS.md                  ← Build progress log
 │
+├── CLAUDE_LOG.md                        ← Complete session history
 └── README.md                            ← This file
 ```
 
@@ -122,8 +124,9 @@ All 8 ValidKernel invariants enforced across all 18 entities:
 | 5 | ENTERPRISE | 3 | COMPLETE |
 | 6 | OPERATIONS | 3 | COMPLETE |
 | **Total** | | **18 entities** | **ALL COMPLETE** |
+| **Assembly** | SAINT_ASSEMBLER | L0-CMD-2026-0215-001 | **IN PROGRESS** |
 
-**Next:** SAINT_ASSEMBLER — extract code from entity definitions, scaffold runnable application, deploy.
+**Current Phase:** SAINT_ASSEMBLER — extracting code from 18 entity definitions, scaffolding deployable Next.js application with kernel validation, demo mode, and glassmorphism UI.
 
 ---
 
@@ -178,4 +181,32 @@ Authority flows DOWN only. Information flows UP. Authority NEVER flows upward.
 
 ---
 
+### Command History
+
+| # | Command ID | Description | Status |
+|---|-----------|-------------|--------|
+| 1 | L0-CMD-2026-0214-001 | Entity Definition Phase (6 phases, 18 entities) | Complete |
+| 2 | L0-CMD-2026-0215-001 | SAINT_ASSEMBLER — scaffold runnable app | In Progress |
+| 3 | L0-CMD-2026-0215-002 | Ecosystem documentation sync (5 repos) | In Progress |
+
+---
+
+### LDS Ecosystem
+
+This repository is part of the Lefebvre Design Solutions construction technology platform:
+
+| Repository | Description | Status |
+|-----------|-------------|--------|
+| **SUPA-SAINT** (this repo) | Unified GCP/Saint-Gobain Super App (18 entities) | Assembler Phase |
+| [GPC_Shop_Drawings](https://github.com/jenkintownelectricity/GPC_Shop_Drawings) | AI-powered shop drawing production | Alpha Complete |
+| [construction_dna](https://github.com/jenkintownelectricity/construction_dna) | 20-tier material DNA taxonomy | Kernel Ready |
+| [construction_development_scraper](https://github.com/jenkintownelectricity/construction_development_scraper) | Groq-based opportunity discovery | Production |
+| [holograph_details](https://github.com/jenkintownelectricity/holograph_details) | 3D BIM detail viewer (multi-tenant SaaS) | Demo Ready |
+
+All repositories governed under LDS L0-command architecture with ValidKernel deterministic trust.
+
+---
+
 *Infrastructure first. Boring by design.*
+
+*Last Updated: 2026-02-15*
