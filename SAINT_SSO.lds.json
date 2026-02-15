@@ -1,0 +1,281 @@
+{
+  "_lds": {
+    "uuid": "saint-sso-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T20:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 5,
+    "sequence": 2,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-005",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Enterprise SSO",
+    "description": "Enterprise Single Sign-On integration for PROJECT SAINT. Supports SAML 2.0 and OIDC protocols for Saint-Gobain corporate identity. JIT user provisioning, IDP group-to-SAINT-role mapping, session management, and multi-tenant SSO configuration.",
+    "principle": "SSO handles WHO someone is. The kernel handles WHAT they can do. SSO maps IDP identity to a SAINT role, then kernel boundaries take over. Authentication and authorization remain separate concerns."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all SSO-provisioned user actions",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — IDP groups map to boundary-defined roles",
+    "auth": "SAINT_AUTH.lds.json — SSO extends the auth system as a third mode alongside demo and Clerk",
+    "white_label": "SAINT_WHITE_LABEL.lds.json — per-tenant SSO configuration tied to brand/domain"
+  },
+  "sso_protocols": {
+    "saml2": {
+      "name": "SAML 2.0",
+      "status": "Primary — Saint-Gobain enterprise standard",
+      "description": "Security Assertion Markup Language 2.0. Industry standard for enterprise SSO. Saint-Gobain's corporate identity infrastructure uses SAML.",
+      "configuration": {
+        "sp_entity_id": "https://{domain}/saml/metadata",
+        "sp_acs_url": "https://{domain}/saml/acs",
+        "sp_slo_url": "https://{domain}/saml/slo",
+        "name_id_format": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+        "signature_algorithm": "RSA-SHA256",
+        "digest_algorithm": "SHA-256",
+        "want_assertions_signed": true,
+        "want_name_id_encrypted": false,
+        "authn_request_signed": true
+      },
+      "idp_requirements": {
+        "metadata_url": "IDP metadata endpoint URL (provided by Saint-Gobain IT)",
+        "certificate": "IDP X.509 signing certificate",
+        "sso_url": "IDP SSO endpoint (HTTP-Redirect or HTTP-POST binding)",
+        "slo_url": "IDP Single Logout endpoint (optional)"
+      },
+      "attributes_mapped": [
+        {"saml_attribute": "email", "saint_field": "user.email", "required": true},
+        {"saml_attribute": "firstName", "saint_field": "user.first_name", "required": true},
+        {"saml_attribute": "lastName", "saint_field": "user.last_name", "required": true},
+        {"saml_attribute": "groups", "saint_field": "role_mapping_input", "required": true},
+        {"saml_attribute": "department", "saint_field": "user.department", "required": false},
+        {"saml_attribute": "employeeId", "saint_field": "user.employee_id", "required": false},
+        {"saml_attribute": "title", "saint_field": "user.title", "required": false}
+      ]
+    },
+    "oidc": {
+      "name": "OpenID Connect",
+      "status": "Secondary — for non-SAML IDPs",
+      "description": "OAuth 2.0 based identity protocol. Used for IDPs that support OIDC but not SAML (e.g., Auth0, Okta with OIDC preference).",
+      "configuration": {
+        "client_id": "SAINT application client ID (per-tenant)",
+        "authorization_endpoint": "IDP authorization URL",
+        "token_endpoint": "IDP token URL",
+        "userinfo_endpoint": "IDP userinfo URL",
+        "jwks_uri": "IDP JSON Web Key Set URL",
+        "scopes": ["openid", "profile", "email", "groups"],
+        "response_type": "code",
+        "grant_type": "authorization_code",
+        "pkce": true
+      },
+      "claims_mapped": [
+        {"oidc_claim": "email", "saint_field": "user.email", "required": true},
+        {"oidc_claim": "given_name", "saint_field": "user.first_name", "required": true},
+        {"oidc_claim": "family_name", "saint_field": "user.last_name", "required": true},
+        {"oidc_claim": "groups", "saint_field": "role_mapping_input", "required": true}
+      ]
+    }
+  },
+  "role_mapping": {
+    "description": "Map IDP groups to SAINT kernel roles. Each SSO tenant defines its own group-to-role mapping.",
+    "mapping_rules": [
+      {
+        "idp_group": "SAINT-Admins",
+        "saint_role": "gcp_admin",
+        "description": "IDP users in SAINT-Admins group get gcp_admin role"
+      },
+      {
+        "idp_group": "SAINT-Engineers",
+        "saint_role": "gcp_engineer",
+        "description": "IDP users in SAINT-Engineers group get gcp_engineer role"
+      },
+      {
+        "idp_group": "SAINT-Sales",
+        "saint_role": "sales_rep",
+        "description": "IDP users in SAINT-Sales group get sales_rep role"
+      },
+      {
+        "idp_group": "SAINT-Contractors",
+        "saint_role": "contractor",
+        "description": "IDP users in SAINT-Contractors group get contractor role"
+      }
+    ],
+    "conflict_resolution": {
+      "multiple_groups": "If user is in multiple groups, highest-privilege role wins (admin > engineer > sales > contractor)",
+      "no_matching_group": "User authenticated but no SAINT role — show 'access pending' page, notify gcp_admin",
+      "unmapped_group": "IDP groups not in mapping table are ignored"
+    },
+    "custom_mapping": {
+      "description": "Admin can configure custom group-to-role mapping per tenant",
+      "interface": "Table editor: IDP Group Name → SAINT Role dropdown",
+      "validation": "At least one group must map to gcp_admin"
+    }
+  },
+  "jit_provisioning": {
+    "description": "Just-In-Time user provisioning — create SAINT user account on first SSO login",
+    "flow": [
+      "User authenticates via IDP",
+      "SAML assertion or OIDC token received",
+      "Check if user exists in SAINT by email",
+      "If new user: create account with IDP attributes, assign role from group mapping",
+      "If existing user: update attributes from IDP (name, department, title), re-evaluate role",
+      "Kernel validates provisioned role against boundaries",
+      "User enters app with assigned role",
+      "Audit log: JIT provisioning event recorded"
+    ],
+    "update_policy": {
+      "on_each_login": ["first_name", "last_name", "department", "title", "groups"],
+      "on_first_login_only": ["email"],
+      "never_from_idp": ["custom_preferences", "notification_settings", "saved_reports"]
+    },
+    "deprovisioning": {
+      "strategy": "Soft deactivation — if user is removed from all SAINT IDP groups, account is deactivated on next login attempt",
+      "data_retention": "Deactivated user data retained for audit compliance (IV.07 Monotonic State)",
+      "reactivation": "Automatic if user is re-added to SAINT IDP group"
+    }
+  },
+  "session_management": {
+    "description": "SSO session handling with token management and single logout",
+    "session_flow": {
+      "login": "IDP authenticates → SAINT receives assertion → create local session → issue JWT",
+      "refresh": "Local session checks IDP session periodically (configurable interval)",
+      "logout": "User clicks logout → SAINT session destroyed → SLO request sent to IDP (if supported)"
+    },
+    "session_config": {
+      "local_session_duration": "8 hours (configurable per-tenant)",
+      "idp_session_check_interval": "15 minutes",
+      "idle_timeout": "30 minutes of inactivity",
+      "force_reauth_actions": ["manage_billing", "manage_users", "manage_api_keys"],
+      "concurrent_sessions": "Allowed — user can be logged in from multiple devices"
+    },
+    "single_logout": {
+      "sp_initiated": "User clicks logout in SAINT → SLO request to IDP → IDP terminates session",
+      "idp_initiated": "IDP sends SLO request → SAINT terminates local session → redirect to login",
+      "support": "Optional — depends on IDP SLO capability"
+    }
+  },
+  "multi_tenant_sso": {
+    "description": "Each white-label tenant can have its own SSO configuration",
+    "tenant_isolation": {
+      "config": "SSO config per-tenant — different IDP, different group mapping",
+      "discovery": "Domain-based SSO discovery — tenant domain → SSO config → IDP redirect",
+      "login_flow": "User visits tenant domain → detect SSO config → redirect to tenant's IDP → callback → enter app"
+    },
+    "mixed_mode": {
+      "description": "Tenants can use SSO, Clerk, or demo mode independently",
+      "priority": "SSO > Clerk > Demo — if SSO is configured for domain, it takes precedence",
+      "fallback": "Admin can enable Clerk as fallback for SSO outages"
+    }
+  },
+  "data_model": {
+    "sso_config": {
+      "id": "uuid",
+      "tenant_id": "uuid — links to brand/domain",
+      "protocol": "saml2 | oidc",
+      "idp_name": "string — display name for the IDP",
+      "idp_metadata_url": "string | null — SAML metadata URL",
+      "idp_certificate": "string — X.509 certificate (SAML) or JWKS URI (OIDC)",
+      "sp_entity_id": "string",
+      "acs_url": "string",
+      "slo_url": "string | null",
+      "client_id": "string | null — OIDC only",
+      "client_secret_encrypted": "string | null — OIDC only",
+      "authorization_endpoint": "string | null — OIDC only",
+      "token_endpoint": "string | null — OIDC only",
+      "group_role_mapping": "object — IDP group name → SAINT role",
+      "attribute_mapping": "object — IDP attribute → SAINT field",
+      "session_duration_hours": "integer",
+      "idle_timeout_minutes": "integer",
+      "force_reauth_actions": "array of action strings",
+      "jit_provisioning_enabled": "boolean",
+      "slo_enabled": "boolean",
+      "active": "boolean",
+      "created_by": "uuid",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "audit_trail": "array"
+    },
+    "sso_user": {
+      "id": "uuid",
+      "saint_user_id": "uuid",
+      "sso_config_id": "uuid",
+      "idp_subject": "string — IDP unique identifier",
+      "idp_email": "string",
+      "idp_groups": "array — groups from last login",
+      "mapped_role": "string — SAINT role derived from groups",
+      "first_login_at": "ISO8601",
+      "last_login_at": "ISO8601",
+      "login_count": "integer",
+      "active": "boolean",
+      "deactivated_at": "ISO8601 | null"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic SSO configuration for demo mode. Simulates Saint-Gobain SAML integration.",
+    "configs": [
+      {
+        "name": "Saint-Gobain Corporate SAML",
+        "protocol": "saml2",
+        "idp_name": "Saint-Gobain Azure AD",
+        "domain": "tools.gcpat.com",
+        "status": "configured (simulated)",
+        "group_mapping": {
+          "GCP-SAINT-Admins": "gcp_admin",
+          "GCP-Design-Engineers": "gcp_engineer",
+          "GCP-Sales-Team": "sales_rep"
+        },
+        "users_provisioned": 12
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/sso/configs", "description": "List SSO configurations (admin only)"},
+      {"method": "POST", "path": "/api/sso/configs", "description": "Create SSO configuration"},
+      {"method": "GET", "path": "/api/sso/configs/:id", "description": "Get SSO config detail"},
+      {"method": "PATCH", "path": "/api/sso/configs/:id", "description": "Update SSO configuration"},
+      {"method": "POST", "path": "/api/sso/configs/:id/test", "description": "Test SSO configuration (dry run)"},
+      {"method": "GET", "path": "/api/sso/configs/:id/metadata", "description": "Get SP metadata XML (SAML)"},
+      {"method": "POST", "path": "/saml/acs", "description": "SAML Assertion Consumer Service endpoint"},
+      {"method": "GET", "path": "/saml/metadata", "description": "SAML SP metadata endpoint"},
+      {"method": "GET", "path": "/saml/slo", "description": "SAML Single Logout endpoint"},
+      {"method": "GET", "path": "/auth/oidc/callback", "description": "OIDC callback endpoint"},
+      {"method": "GET", "path": "/api/sso/users", "description": "List SSO-provisioned users"},
+      {"method": "GET", "path": "/api/sso/users/:id", "description": "Get SSO user detail"},
+      {"method": "POST", "path": "/api/sso/users/:id/deactivate", "description": "Manually deactivate SSO user"},
+      {"method": "GET", "path": "/api/sso/discover/:domain", "description": "SSO discovery by domain"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTSSO.jsx",
+    "description": "SSO administration interface. Protocol configuration (SAML/OIDC). Group-to-role mapping editor. JIT provisioning settings. Session management. SSO user list. Test and diagnostics.",
+    "exports": [
+      "SAINTSSO — main entity component (SSO management + routing)",
+      "SSOConfigList — list of SSO configurations with status",
+      "SSOConfigEditor — protocol-specific config form (SAML or OIDC tabs)",
+      "GroupRoleMappingEditor — IDP group to SAINT role mapping table",
+      "JITProvisioningSettings — provisioning policy configuration",
+      "SessionSettings — session duration, idle timeout, force reauth config",
+      "SSOUserList — SSO-provisioned users with login history",
+      "SSOTestTool — dry-run SSO flow with diagnostic output",
+      "SPMetadataViewer — view and download SP metadata XML"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context)",
+      "SAINTAuth (extends auth system with SSO mode)",
+      "SAINT_WHITE_LABEL (per-tenant SSO config tied to domain)",
+      "passport-saml or saml2-js (SAML library)",
+      "openid-client (OIDC library)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — configure SSO, manage group mapping, view provisioned users",
+      "gcp_engineer": "No access — kernel DENIES",
+      "sales_rep": "No access — kernel DENIES",
+      "contractor": "No access — kernel DENIES"
+    },
+    "code_reference": "Follows TradeOS entity pattern. SSO is the third auth mode extending SAINTAuth. Authentication flows through SSO, authorization through kernel."
+  }
+}

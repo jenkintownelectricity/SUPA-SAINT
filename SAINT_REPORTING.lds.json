@@ -1,0 +1,391 @@
+{
+  "_lds": {
+    "uuid": "saint-reporting-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T18:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 4,
+    "sequence": 3,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-004",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Reporting",
+    "description": "Analytics and reporting engine for PROJECT SAINT. Cross-entity data aggregation covering sales metrics, engineering productivity, warranty KPIs, contractor engagement, and platform usage. Role-scoped — each role sees reports relevant to their function.",
+    "principle": "Reports are read-only views of data that lives in other entities. No data modification through reports. Every report respects role boundaries — sales reps see own territory, engineers see own projects, contractors see own data."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates report access, enforces role-based data scoping",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — each role sees role-appropriate reports",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for data scoping",
+    "pipeline": "SAINT_PIPELINE.lds.json — sales metrics source",
+    "opp_scraper": "SAINT_OPP_SCRAPER.lds.json — opportunity metrics source",
+    "territories": "SAINT_TERRITORIES.lds.json — territory performance source",
+    "shop_drawings": "SAINT_SHOP_DRAWINGS.lds.json — engineering productivity source",
+    "warranty": "SAINT_WARRANTY.lds.json — warranty KPIs source",
+    "submittals": "SAINT_SUBMITTALS.lds.json — submittal metrics source",
+    "contractor_dash": "SAINT_CONTRACTOR_DASH.lds.json — contractor engagement source"
+  },
+  "report_categories": {
+    "sales": {
+      "name": "Sales & Pipeline Reports",
+      "audience": ["sales_rep", "gcp_admin"],
+      "reports": [
+        {
+          "id": "pipeline_overview",
+          "name": "Pipeline Overview",
+          "description": "Current pipeline by stage with value, count, and weighted forecast",
+          "metrics": ["total_pipeline_value", "weighted_pipeline_value", "deal_count_by_stage", "average_deal_size", "pipeline_coverage_ratio"],
+          "visualizations": ["stacked_bar_by_stage", "pipeline_value_trend_line", "deal_count_pie"],
+          "filters": ["date_range", "territory", "rep", "product", "assembly_type"],
+          "data_source": "SAINT_PIPELINE"
+        },
+        {
+          "id": "forecast_report",
+          "name": "Revenue Forecast",
+          "description": "Forward-looking revenue projection by month based on pipeline stage probabilities",
+          "metrics": ["commit_forecast", "best_case_forecast", "pipeline_forecast", "quota_attainment", "forecast_accuracy_vs_historical"],
+          "visualizations": ["grouped_bar_chart_by_month", "attainment_gauge"],
+          "filters": ["period", "territory", "rep"],
+          "data_source": "SAINT_PIPELINE"
+        },
+        {
+          "id": "win_loss_analysis",
+          "name": "Win/Loss Analysis",
+          "description": "Win rate trends, loss reasons, and competitive analysis",
+          "metrics": ["win_rate", "loss_reasons_breakdown", "competitor_win_frequency", "average_sales_cycle", "win_rate_by_product", "win_rate_by_source"],
+          "visualizations": ["win_rate_trend_line", "loss_reason_donut", "competitor_bar_chart"],
+          "filters": ["date_range", "territory", "rep", "product"],
+          "data_source": "SAINT_PIPELINE"
+        },
+        {
+          "id": "opportunity_funnel",
+          "name": "Opportunity Funnel",
+          "description": "Opportunity-to-deal conversion funnel with stage-by-stage drop-off",
+          "metrics": ["opportunities_discovered", "leads_created", "deals_qualified", "proposals_sent", "deals_won", "conversion_rate_per_stage"],
+          "visualizations": ["horizontal_funnel", "conversion_rate_bar_chart"],
+          "filters": ["date_range", "territory", "source"],
+          "data_source": "SAINT_OPP_SCRAPER + SAINT_PIPELINE"
+        },
+        {
+          "id": "rep_activity",
+          "name": "Sales Activity Report",
+          "description": "Activity volume and types logged by sales reps",
+          "metrics": ["activities_per_rep", "activities_by_type", "activities_per_deal", "avg_activities_before_close"],
+          "visualizations": ["activity_heatmap_by_day", "activity_type_stacked_bar"],
+          "filters": ["date_range", "rep", "activity_type"],
+          "data_source": "SAINT_PIPELINE activities"
+        },
+        {
+          "id": "territory_performance",
+          "name": "Territory Performance",
+          "description": "Territory-level pipeline, conversion, and revenue metrics for comparison",
+          "metrics": ["revenue_by_territory", "pipeline_by_territory", "win_rate_by_territory", "quota_attainment_by_territory", "opportunity_density"],
+          "visualizations": ["territory_comparison_bar", "territory_heat_map", "leaderboard_table"],
+          "filters": ["period", "region", "district"],
+          "data_source": "SAINT_TERRITORIES + SAINT_PIPELINE"
+        }
+      ]
+    },
+    "engineering": {
+      "name": "Engineering Productivity Reports",
+      "audience": ["gcp_engineer", "gcp_admin"],
+      "reports": [
+        {
+          "id": "drawing_throughput",
+          "name": "Shop Drawing Throughput",
+          "description": "Drawing volume, turnaround time, and revision rates",
+          "metrics": ["drawings_created", "drawings_approved", "avg_turnaround_days", "revision_rate", "drawings_by_assembly_type", "drawings_by_engineer"],
+          "visualizations": ["throughput_trend_line", "turnaround_distribution", "assembly_type_pie"],
+          "filters": ["date_range", "engineer", "assembly_type", "contractor"],
+          "data_source": "SAINT_SHOP_DRAWINGS"
+        },
+        {
+          "id": "product_usage",
+          "name": "Product Usage Report",
+          "description": "GCP products referenced in shop drawings and configurations — identifies most/least used products",
+          "metrics": ["product_usage_count", "product_usage_by_sqft", "product_revenue_by_usage", "discontinued_product_attempts"],
+          "visualizations": ["product_bar_chart", "product_treemap"],
+          "filters": ["date_range", "category", "assembly_type"],
+          "data_source": "SAINT_SHOP_DRAWINGS + SAINT_PRODUCT_CONFIG"
+        },
+        {
+          "id": "submittal_metrics",
+          "name": "Submittal Metrics",
+          "description": "Submittal volume, approval rates, and response times",
+          "metrics": ["submittals_created", "submittals_approved", "revision_rate", "avg_review_days", "approval_rate", "submittals_by_spec_section"],
+          "visualizations": ["approval_rate_gauge", "review_time_histogram", "status_flow_sankey"],
+          "filters": ["date_range", "engineer", "contractor", "spec_section"],
+          "data_source": "SAINT_SUBMITTALS"
+        },
+        {
+          "id": "configuration_report",
+          "name": "Configuration Activity",
+          "description": "Assembly configurations created, validated, and submitted to shop drawings",
+          "metrics": ["configs_created", "configs_validated", "configs_submitted_to_drawings", "validation_pass_rate", "most_configured_assemblies"],
+          "visualizations": ["config_trend_line", "assembly_type_bar"],
+          "filters": ["date_range", "assembly_type", "engineer"],
+          "data_source": "SAINT_PRODUCT_CONFIG"
+        }
+      ]
+    },
+    "warranty": {
+      "name": "Warranty & Compliance Reports",
+      "audience": ["gcp_engineer", "gcp_admin"],
+      "reports": [
+        {
+          "id": "claims_dashboard",
+          "name": "Warranty Claims Dashboard",
+          "description": "Open, resolved, and denied claims with trend analysis",
+          "metrics": ["open_claims", "resolved_this_period", "denied_this_period", "avg_resolution_days", "claims_by_type", "claims_by_severity"],
+          "visualizations": ["claims_trend_line", "status_distribution_pie", "severity_bar"],
+          "filters": ["date_range", "contractor", "product", "claim_type", "severity"],
+          "data_source": "SAINT_WARRANTY"
+        },
+        {
+          "id": "warranty_exposure",
+          "name": "Warranty Exposure",
+          "description": "Total warranty liability across all active projects",
+          "metrics": ["total_covered_sqft", "total_estimated_liability", "expiring_next_90_days", "expiring_next_year", "system_vs_product_warranty_split"],
+          "visualizations": ["exposure_trend_area", "expiration_timeline_gantt", "warranty_type_donut"],
+          "filters": ["date_range", "warranty_type", "product_category"],
+          "data_source": "SAINT_WARRANTY"
+        },
+        {
+          "id": "product_reliability",
+          "name": "Product Reliability Analysis",
+          "description": "Claims rate by product — identifies products with higher-than-expected failure rates",
+          "metrics": ["claims_per_product", "claims_per_100k_sqft", "mean_time_to_failure", "failure_mode_distribution", "trend_vs_baseline"],
+          "visualizations": ["reliability_scatter", "failure_mode_pareto", "product_comparison_bar"],
+          "filters": ["date_range", "product_category", "product"],
+          "data_source": "SAINT_WARRANTY + SAINT_PRODUCT_CONFIG"
+        }
+      ]
+    },
+    "contractor": {
+      "name": "Contractor Engagement Reports",
+      "audience": ["gcp_admin"],
+      "reports": [
+        {
+          "id": "contractor_activity",
+          "name": "Contractor Activity",
+          "description": "Contractor platform usage, project activity, and engagement levels",
+          "metrics": ["active_contractors", "login_frequency", "drawings_downloaded", "claims_submitted", "submittals_viewed", "photos_uploaded"],
+          "visualizations": ["engagement_heatmap", "activity_trend_line", "top_contractors_table"],
+          "filters": ["date_range", "contractor", "territory"],
+          "data_source": "SAINT_CONTRACTOR_DASH"
+        },
+        {
+          "id": "contractor_performance",
+          "name": "Contractor Performance",
+          "description": "Contractor installation quality metrics based on warranty claims and project outcomes",
+          "metrics": ["claims_per_contractor", "project_completion_rate", "avg_project_duration", "repeat_business_rate"],
+          "visualizations": ["contractor_scorecard", "performance_ranking_table"],
+          "filters": ["date_range", "contractor", "territory"],
+          "data_source": "SAINT_WARRANTY + SAINT_CONTRACTOR_DASH"
+        }
+      ]
+    },
+    "platform": {
+      "name": "Platform Usage Reports",
+      "audience": ["gcp_admin"],
+      "reports": [
+        {
+          "id": "platform_usage",
+          "name": "Platform Usage Summary",
+          "description": "Overall SAINT platform usage metrics across all entities",
+          "metrics": ["total_users", "daily_active_users", "actions_per_day", "most_used_entities", "kernel_validations_per_day", "avg_response_time"],
+          "visualizations": ["dau_trend_line", "entity_usage_bar", "hourly_usage_heatmap"],
+          "filters": ["date_range", "role", "entity"],
+          "data_source": "Kernel audit logs"
+        },
+        {
+          "id": "audit_report",
+          "name": "Audit Trail Report",
+          "description": "Kernel audit log analysis — all actions validated, denied, and escalated",
+          "metrics": ["total_validations", "allowed_count", "denied_count", "escalation_count", "denials_by_role", "top_denied_actions"],
+          "visualizations": ["validation_result_pie", "denial_trend_line", "role_activity_stacked_bar"],
+          "filters": ["date_range", "role", "action", "result"],
+          "data_source": "SAINT_KERNEL audit log"
+        }
+      ]
+    }
+  },
+  "report_features": {
+    "common_features": [
+      {
+        "feature": "date_range_picker",
+        "description": "Select custom date range or presets (today, 7d, 30d, 90d, YTD, custom)",
+        "default": "last 30 days"
+      },
+      {
+        "feature": "export",
+        "description": "Export report data",
+        "formats": ["CSV", "PDF", "XLSX"],
+        "actions": ["export_data", "export_report"]
+      },
+      {
+        "feature": "scheduled_reports",
+        "description": "Schedule reports to be generated and emailed on a recurring basis",
+        "frequencies": ["daily", "weekly", "monthly"],
+        "delivery": "Email with PDF attachment and CSV data"
+      },
+      {
+        "feature": "drill_down",
+        "description": "Click any metric to drill into the underlying data. Click a pipeline bar to see the deals in that stage.",
+        "behavior": "Progressive disclosure — summary → detail → individual record"
+      },
+      {
+        "feature": "comparison",
+        "description": "Compare current period vs previous period for any metric",
+        "comparison_types": ["period_over_period", "year_over_year"]
+      },
+      {
+        "feature": "favorites",
+        "description": "Save frequently used report configurations (filters, date range) for quick access",
+        "persistence": "Per-user, stored in user preferences"
+      }
+    ]
+  },
+  "dashboards": {
+    "description": "Pre-built dashboard views that combine key metrics from multiple reports",
+    "dashboards": [
+      {
+        "id": "executive_dashboard",
+        "name": "Executive Dashboard",
+        "audience": ["gcp_admin"],
+        "description": "Company-wide KPIs at a glance — revenue, pipeline, warranty, platform health",
+        "widgets": [
+          {"type": "kpi_card", "metric": "total_revenue_closed", "source": "pipeline"},
+          {"type": "kpi_card", "metric": "total_pipeline_value", "source": "pipeline"},
+          {"type": "kpi_card", "metric": "active_opportunities", "source": "opp_scraper"},
+          {"type": "kpi_card", "metric": "open_warranty_claims", "source": "warranty"},
+          {"type": "chart", "report": "forecast_report", "visualization": "grouped_bar_chart_by_month"},
+          {"type": "chart", "report": "territory_performance", "visualization": "leaderboard_table"},
+          {"type": "chart", "report": "drawing_throughput", "visualization": "throughput_trend_line"},
+          {"type": "chart", "report": "claims_dashboard", "visualization": "claims_trend_line"}
+        ]
+      },
+      {
+        "id": "sales_dashboard",
+        "name": "Sales Dashboard",
+        "audience": ["sales_rep", "gcp_admin"],
+        "description": "Sales-focused view — pipeline, forecast, activity, territory",
+        "widgets": [
+          {"type": "kpi_card", "metric": "my_pipeline_value", "source": "pipeline"},
+          {"type": "kpi_card", "metric": "my_quota_attainment", "source": "pipeline"},
+          {"type": "kpi_card", "metric": "my_win_rate", "source": "pipeline"},
+          {"type": "kpi_card", "metric": "my_hot_opportunities", "source": "opp_scraper"},
+          {"type": "chart", "report": "pipeline_overview", "visualization": "stacked_bar_by_stage"},
+          {"type": "chart", "report": "opportunity_funnel", "visualization": "horizontal_funnel"},
+          {"type": "chart", "report": "rep_activity", "visualization": "activity_heatmap_by_day"}
+        ]
+      },
+      {
+        "id": "engineering_dashboard",
+        "name": "Engineering Dashboard",
+        "audience": ["gcp_engineer", "gcp_admin"],
+        "description": "Engineering productivity view — drawings, configs, submittals",
+        "widgets": [
+          {"type": "kpi_card", "metric": "drawings_this_month", "source": "shop_drawings"},
+          {"type": "kpi_card", "metric": "avg_turnaround_days", "source": "shop_drawings"},
+          {"type": "kpi_card", "metric": "submittal_approval_rate", "source": "submittals"},
+          {"type": "kpi_card", "metric": "open_claims_assigned", "source": "warranty"},
+          {"type": "chart", "report": "drawing_throughput", "visualization": "throughput_trend_line"},
+          {"type": "chart", "report": "submittal_metrics", "visualization": "approval_rate_gauge"},
+          {"type": "chart", "report": "product_usage", "visualization": "product_treemap"}
+        ]
+      }
+    ]
+  },
+  "data_model": {
+    "saved_report": {
+      "id": "uuid",
+      "user_id": "uuid",
+      "report_id": "string — report definition ID",
+      "name": "string — user-assigned name",
+      "filters": "object — saved filter configuration",
+      "date_range": "object — saved date range",
+      "is_favorite": "boolean",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601"
+    },
+    "scheduled_report": {
+      "id": "uuid",
+      "user_id": "uuid",
+      "report_id": "string",
+      "name": "string",
+      "filters": "object",
+      "frequency": "daily | weekly | monthly",
+      "delivery_day": "string — day of week (weekly) or day of month (monthly)",
+      "delivery_time": "string — time in user's timezone",
+      "recipients": "array of email addresses",
+      "format": "PDF | CSV | XLSX",
+      "active": "boolean",
+      "last_sent_at": "ISO8601 | null",
+      "created_at": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic reporting data. Aggregated from all entity demo data.",
+    "executive_kpis": {
+      "revenue_closed_ytd": 1580000,
+      "total_pipeline": 5600000,
+      "weighted_pipeline": 2397500,
+      "active_opportunities": 26,
+      "open_warranty_claims": 1,
+      "active_contractors": 8,
+      "drawings_this_month": 7,
+      "submittals_approved": 3
+    }
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/reports/:reportId", "description": "Get report data with filters"},
+      {"method": "GET", "path": "/api/reports/:reportId/export", "description": "Export report (CSV, PDF, XLSX)"},
+      {"method": "GET", "path": "/api/dashboards/:dashboardId", "description": "Get dashboard widget data"},
+      {"method": "GET", "path": "/api/reports/saved", "description": "List user's saved report configurations"},
+      {"method": "POST", "path": "/api/reports/saved", "description": "Save report configuration"},
+      {"method": "DELETE", "path": "/api/reports/saved/:id", "description": "Delete saved report"},
+      {"method": "GET", "path": "/api/reports/scheduled", "description": "List user's scheduled reports"},
+      {"method": "POST", "path": "/api/reports/scheduled", "description": "Create scheduled report"},
+      {"method": "PATCH", "path": "/api/reports/scheduled/:id", "description": "Update scheduled report"},
+      {"method": "DELETE", "path": "/api/reports/scheduled/:id", "description": "Delete scheduled report"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTReporting.jsx",
+    "description": "Analytics and reporting interface. Pre-built dashboards for executive, sales, and engineering roles. Individual report views with filters, drill-down, and export. Saved reports and scheduled delivery. All data scoped by role.",
+    "exports": [
+      "SAINTReporting — main entity component (dashboards + reports + routing)",
+      "ExecutiveDashboard — company-wide KPIs with multi-entity widgets",
+      "SalesDashboard — pipeline, forecast, activity, territory metrics",
+      "EngineeringDashboard — drawing throughput, submittals, product usage",
+      "ReportViewer — generic report renderer with filters, charts, and tables",
+      "ReportExporter — export handler for CSV, PDF, XLSX",
+      "DateRangePicker — preset and custom date range selector",
+      "DrillDown — progressive disclosure from summary to detail to record",
+      "SavedReports — list and manage saved report configurations",
+      "ScheduledReports — create and manage scheduled report deliveries"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — role-based report scoping)",
+      "SAINTAuth (user identity, role)",
+      "All Phase 2-4 entities (data sources)",
+      "Recharts or Chart.js (chart rendering)",
+      "jsPDF + SheetJS (export generation)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — executive dashboard, all reports, all territories, all contractors",
+      "gcp_engineer": "Engineering dashboard — own drawing throughput, submittals, product usage, assigned warranty claims",
+      "sales_rep": "Sales dashboard — own pipeline, own territory, own forecast, own activity",
+      "contractor": "No access — contractor views reports through Contractor Dashboard widgets"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained component loaded by SAINTShell entity loader. Report data aggregated from multiple entity APIs, scoped by role at kernel level."
+  }
+}

@@ -1,0 +1,139 @@
+{
+  "_lds": {
+    "uuid": "saint-phase3-complete-2026-001",
+    "type": "phase_summary",
+    "version": "1.0.0",
+    "created": "2026-02-14T17:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 3,
+    "status": "COMPLETE",
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-003",
+      "status": "AUTHORIZED"
+    }
+  },
+  "summary": {
+    "phase_name": "CONTRACTOR_PORTAL",
+    "entities_created": 3,
+    "files": [
+      "SAINT_CONTRACTOR_DASH.lds.json — Contractor command center with KPI cards (active projects, pending drawings, open warranty claims, pending submittals), project list with tabbed detail view, activity feed, notification system with 6 event types, field photo upload, quick-action shortcuts, admin contractor management table.",
+      "SAINT_WARRANTY.lds.json — Warranty tracking with 3 warranty types (product, system, labor), per-project/assembly coverage tracker with calendar visualization, 11-state claim workflow (draft through resolved/denied_final), structured claim form with photo/document upload, appeal process with escalation to Keith Berg, 4 analytics reports (summary, exposure, product reliability, contractor performance).",
+      "SAINT_SUBMITTALS.lds.json — Submittal package management with 10 document types, 5-stage assembly workflow (spec analysis, document assembly, completeness check, formatting, submission), auto-populate from product catalog, AI-powered specification parser, 8-state review workflow (draft through acknowledged), compiled PDF generation with cover sheet and TOC, CSI MasterFormat section mapping."
+    ],
+    "key_features_delivered": [
+      "Contractor command center with 4 KPI cards and responsive grid layout",
+      "Project detail view with 6 tabs (overview, drawings, warranty, submittals, photos, contacts)",
+      "In-app notification system with 6 event types and configurable delivery preferences",
+      "Field photo upload with metadata (date, location, assembly reference)",
+      "Admin contractor management table with filters and sorting",
+      "3 warranty types: product, system, labor — with eligibility rules",
+      "Warranty coverage tracker with Gantt-style calendar visualization",
+      "11-state warranty claim workflow with field inspection stage",
+      "Claim appeal process with escalation to gcp_admin (Keith Berg)",
+      "Warranty analytics: claims summary, exposure, product reliability, contractor performance",
+      "Escalation rules: $50K threshold, 30-day stale claims, recurring issues",
+      "10 submittal document types with source tracing (product catalog, shop drawings, warranty)",
+      "Auto-populate documents from SAINT_PRODUCT_CONFIG catalog",
+      "AI-powered specification parser for submittal requirement extraction",
+      "Submittal completeness validation with gap reporting",
+      "Compiled PDF generation with cover sheet, table of contents, section dividers",
+      "8-state review workflow tracking (APPROVED, APPROVED AS NOTED, REVISE AND RESUBMIT, REJECTED)",
+      "CSI MasterFormat Division 07 section mapping for all GCP products",
+      "Demo data: Trinity Building Envelope with 3 Philadelphia-area projects",
+      "Cross-entity integration: Contractor Dash aggregates data from Shop Drawings, Warranty, and Submittals"
+    ],
+    "architecture_decisions": [
+      "Contractor Dashboard is an aggregator — pulls data from Shop Drawings, Warranty, and Submittals entities",
+      "Warranty claim workflow uses state machine pattern — each state has defined allowed actions and valid transitions",
+      "Submittal auto-populate pulls documents from Product Config at assembly time, not at product creation time",
+      "Notification system is per-entity — each entity generates events, Contractor Dash consumes and displays them",
+      "Field photos stored in cloud storage with CDN — only metadata in database",
+      "Submittal PDF compilation generates single document from individual source documents — original files preserved"
+    ],
+    "cross_entity_integration": {
+      "description": "Phase 3 entities have the highest cross-entity dependency of any phase",
+      "integrations": [
+        {"from": "SAINT_CONTRACTOR_DASH", "to": "SAINT_SHOP_DRAWINGS", "data": "Drawing delivery status, download links"},
+        {"from": "SAINT_CONTRACTOR_DASH", "to": "SAINT_WARRANTY", "data": "Warranty coverage summary, claim status"},
+        {"from": "SAINT_CONTRACTOR_DASH", "to": "SAINT_SUBMITTALS", "data": "Submittal tracking, review status"},
+        {"from": "SAINT_WARRANTY", "to": "SAINT_PRODUCT_CONFIG", "data": "Product warranty terms, system warranty eligibility"},
+        {"from": "SAINT_WARRANTY", "to": "SAINT_SHOP_DRAWINGS", "data": "Assembly references, product lists per drawing"},
+        {"from": "SAINT_SUBMITTALS", "to": "SAINT_PRODUCT_CONFIG", "data": "Product data sheets, test reports, installation guides, SDS"},
+        {"from": "SAINT_SUBMITTALS", "to": "SAINT_SHOP_DRAWINGS", "data": "Approved shop drawings for inclusion in packages"},
+        {"from": "SAINT_SUBMITTALS", "to": "SAINT_WARRANTY", "data": "Warranty letters for inclusion in packages"}
+      ]
+    },
+    "kernel_rules_exercised": [
+      {
+        "rule": "VR-SAINT-002",
+        "name": "Warranty Boundary",
+        "exercised_by": ["SAINT_WARRANTY (system vs product warranty eligibility, non-GCP product exclusion)"]
+      },
+      {
+        "rule": "VR-SAINT-004",
+        "name": "Contractor Data Isolation",
+        "exercised_by": ["SAINT_CONTRACTOR_DASH (each contractor sees own data only)", "SAINT_WARRANTY (contractor sees own claims only)", "SAINT_SUBMITTALS (contractor sees own packages only)"]
+      }
+    ],
+    "role_access_matrix": {
+      "gcp_admin": {
+        "SAINT_CONTRACTOR_DASH": "Contractor management table + view any contractor's dashboard",
+        "SAINT_WARRANTY": "Full oversight — all claims, reporting, exposure analysis",
+        "SAINT_SUBMITTALS": "Full access — all packages, cross-project reporting"
+      },
+      "gcp_engineer": {
+        "SAINT_CONTRACTOR_DASH": "View assigned contractor projects (via project navigation)",
+        "SAINT_WARRANTY": "Manage claims — review, inspect, approve/deny, assign remedies",
+        "SAINT_SUBMITTALS": "Full access — create packages, assemble documents, submit for review"
+      },
+      "sales_rep": {
+        "SAINT_CONTRACTOR_DASH": "DENIED — not sales scope",
+        "SAINT_WARRANTY": "DENIED — not sales scope",
+        "SAINT_SUBMITTALS": "DENIED — not sales scope"
+      },
+      "contractor": {
+        "SAINT_CONTRACTOR_DASH": "Full dashboard — own projects, own data, quick actions",
+        "SAINT_WARRANTY": "View own coverage, submit claims, track status, appeal denials",
+        "SAINT_SUBMITTALS": "View own submittals, track status, request review"
+      }
+    }
+  },
+  "phase_verification": {
+    "checklist": [
+      {"item": "SAINT_CONTRACTOR_DASH.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_WARRANTY.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_SUBMITTALS.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "All entities reference parent saint-master-2026-001", "status": "PASS"},
+      {"item": "All entities declare phase: 3 with correct sequence numbers", "status": "PASS"},
+      {"item": "All entities have react_component block with exports", "status": "PASS"},
+      {"item": "All entities have demo_data for demo mode", "status": "PASS"},
+      {"item": "All entities have backend API endpoints defined", "status": "PASS"},
+      {"item": "All entities reference kernel validation rules", "status": "PASS"},
+      {"item": "Role access defined for all 4 roles across all 3 entities", "status": "PASS"},
+      {"item": "Cross-entity dependencies documented", "status": "PASS"},
+      {"item": "Entity filenames match SAINT_MASTER_INDEX.lds.json manifest", "status": "PASS"},
+      {"item": "Warranty claim workflow has valid state machine transitions", "status": "PASS"},
+      {"item": "Submittal review workflow has valid state machine transitions", "status": "PASS"}
+    ]
+  },
+  "next_phase_instructions": {
+    "phase": 4,
+    "name": "SALES_CRM",
+    "l0_command": "L0-CMD-2026-0214-004 (to be issued)",
+    "entities_to_build": [
+      "SAINT_PIPELINE.lds.json — Sales pipeline management with deal stages, forecasting, and activity tracking. Integrates with Opportunity Scraper for lead-to-deal conversion.",
+      "SAINT_TERRITORIES.lds.json — Territory management with geographic assignment, rep allocation, and performance metrics. Integrates with Opportunity Scraper territory filtering.",
+      "SAINT_REPORTING.lds.json — Analytics and reporting engine covering sales metrics, engineering productivity, warranty KPIs, and contractor engagement. Cross-entity data aggregation."
+    ],
+    "dependencies": "Phase 1 foundation + Phase 2 tools (esp. Opportunity Scraper for pipeline feed and territory data) + Phase 3 contractor portal (for contractor engagement metrics in reporting).",
+    "command_for_next_chat": "Continue building PROJECT SAINT Phase 4. Reference SAINT_MASTER_INDEX.lds.json and all Phase 1-3 entities. Build the SALES_CRM tier: Pipeline, Territories, and Reporting. Each as a self-contained .lds.json entity file that loads into the SAINT shell via the entity loader."
+  },
+  "assembly_preview": {
+    "when": "After all 6 phases complete",
+    "how": "Create SAINT_ASSEMBLER.lds.json that extracts code from all entities, resolves imports, and produces deployable application",
+    "output": "Deployable artifact — Railway backend + Vercel frontend, or all-Railway",
+    "phases_complete": "3 of 6",
+    "entities_complete": "10 of 18 total (4 Phase 1 + 3 Phase 2 + 3 Phase 3)"
+  }
+}

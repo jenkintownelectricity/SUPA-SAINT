@@ -1,0 +1,387 @@
+{
+  "_lds": {
+    "uuid": "saint-warranty-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T16:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 3,
+    "sequence": 2,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-003",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Warranty",
+    "description": "Warranty tracking and claim management for GCP building envelope products. Tracks warranty coverage per project and assembly, manages claim submission and resolution workflows, integrates with Product Config warranty data. Keith Berg (Manager, Warranty & Compliance) is the domain authority.",
+    "principle": "Every GCP product has defined warranty terms. Coverage determined by product + assembly configuration. Non-GCP products excluded from system warranty (VR-SAINT-002). Claim resolution follows structured workflow with audit trail."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all warranty actions, enforces VR-SAINT-002 warranty boundary",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — gcp_engineer creates/manages claims, contractor submits/views claims, gcp_admin full oversight",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — user identity for data isolation and audit trail",
+    "product_config": "SAINT_PRODUCT_CONFIG.lds.json — warranty terms per product, system warranty eligibility",
+    "shop_drawings": "SAINT_SHOP_DRAWINGS.lds.json — assembly configuration and product references per drawing",
+    "contractor_dash": "SAINT_CONTRACTOR_DASH.lds.json — warranty summary widget on contractor dashboard"
+  },
+  "warranty_types": {
+    "description": "GCP warranty programs mapped to product categories",
+    "types": [
+      {
+        "id": "product_warranty",
+        "name": "Individual Product Warranty",
+        "description": "Standard manufacturer warranty on individual GCP products. Covers material defects under normal use.",
+        "coverage": "Varies by product — see product catalog",
+        "typical_duration": "5-15 years depending on product",
+        "requires": "Proof of purchase, proper installation per manufacturer specifications",
+        "excludes": ["improper installation", "abuse", "normal wear", "acts of god", "unauthorized modifications"]
+      },
+      {
+        "id": "system_warranty",
+        "name": "GCP System Warranty",
+        "description": "Extended system warranty when ALL products in an assembly are GCP products from the same system family. Covers the complete assembly as a system, not just individual components.",
+        "coverage": "Air and water infiltration, structural integrity of assembly, material compatibility",
+        "typical_duration": "10-20 years",
+        "requires": [
+          "All products in assembly must be GCP products (VR-SAINT-002)",
+          "Installation by approved contractor",
+          "Pre-installation meeting with GCP representative",
+          "Periodic field inspections during installation",
+          "Completion of system warranty application within 90 days of project completion"
+        ],
+        "premium_over_product": "Significantly broader coverage — covers system performance, not just material defects",
+        "kernel_enforcement": "VR-SAINT-002 — Product Config validates system warranty eligibility at configuration time"
+      },
+      {
+        "id": "labor_warranty",
+        "name": "Labor & Installation Warranty",
+        "description": "Covers labor and installation workmanship. Separate from product/system warranty. Issued by installing contractor, not by GCP.",
+        "coverage": "Installation workmanship defects",
+        "typical_duration": "1-5 years",
+        "issuer": "Installing contractor",
+        "note": "SAINT tracks this for completeness but GCP is not the warrantor"
+      }
+    ]
+  },
+  "warranty_coverage_tracker": {
+    "description": "Per-project warranty tracking. Shows what is covered, warranty type, duration, expiration, and eligibility.",
+    "coverage_view": {
+      "project_level": {
+        "fields": ["project_name", "project_address", "contractor", "completion_date", "warranty_start_date"],
+        "assemblies": "List of building envelope assemblies on the project, each with its own warranty record"
+      },
+      "assembly_level": {
+        "fields": ["assembly_type", "assembly_location", "products_used", "warranty_type", "warranty_start", "warranty_expiration", "warranty_status"],
+        "warranty_status_values": ["active", "expiring_soon", "expired", "voided", "claim_in_progress"],
+        "expiring_soon_threshold": "90 days before expiration"
+      },
+      "product_level": {
+        "fields": ["product_name", "product_id", "warranty_type", "warranty_years", "warranty_start", "warranty_expiration", "is_gcp_product"],
+        "non_gcp_flag": "VR-SAINT-002 — non-GCP products displayed with 'No GCP Warranty Coverage' badge"
+      }
+    },
+    "calendar_view": {
+      "description": "Timeline visualization of warranty periods with expiration alerts",
+      "features": ["Gantt-style warranty timeline per project", "Color-coded by status (active=green, expiring=yellow, expired=red)", "Click to view assembly detail"]
+    }
+  },
+  "claim_workflow": {
+    "description": "Structured warranty claim submission and resolution process",
+    "claim_states": [
+      {
+        "state": "draft",
+        "description": "Claim being prepared by contractor or engineer",
+        "allowed_actions": ["edit_claim", "add_photos", "add_documents", "submit_claim"],
+        "next_states": ["submitted"]
+      },
+      {
+        "state": "submitted",
+        "description": "Claim submitted for GCP engineering review",
+        "allowed_actions": ["assign_reviewer", "add_notes"],
+        "next_states": ["under_review"],
+        "auto_action": "Notify assigned GCP engineer"
+      },
+      {
+        "state": "under_review",
+        "description": "GCP engineer reviewing claim — may request field inspection",
+        "allowed_actions": ["request_inspection", "request_info", "approve_claim", "deny_claim", "add_notes"],
+        "next_states": ["inspection_scheduled", "info_requested", "approved", "denied"]
+      },
+      {
+        "state": "inspection_scheduled",
+        "description": "Field inspection scheduled to verify claim",
+        "allowed_actions": ["complete_inspection", "reschedule_inspection", "add_notes"],
+        "next_states": ["under_review"],
+        "fields": ["inspection_date", "inspector_name", "inspection_notes", "inspection_photos"]
+      },
+      {
+        "state": "info_requested",
+        "description": "Additional information requested from contractor",
+        "allowed_actions": ["provide_info", "add_photos", "add_documents"],
+        "next_states": ["under_review"],
+        "auto_action": "Notify contractor"
+      },
+      {
+        "state": "approved",
+        "description": "Claim approved — remedy authorized",
+        "allowed_actions": ["assign_remedy", "schedule_repair", "add_notes"],
+        "next_states": ["remedy_in_progress"],
+        "auto_action": "Notify contractor + Keith Berg (Warranty & Compliance)"
+      },
+      {
+        "state": "denied",
+        "description": "Claim denied with documented reason",
+        "allowed_actions": ["appeal_denial"],
+        "next_states": ["under_appeal"],
+        "fields": ["denial_reason", "denial_documentation"],
+        "auto_action": "Notify contractor with denial reason"
+      },
+      {
+        "state": "under_appeal",
+        "description": "Contractor has appealed denial — escalated to Keith Berg for review",
+        "allowed_actions": ["overturn_denial", "uphold_denial", "add_notes"],
+        "next_states": ["approved", "denied_final"],
+        "escalation": {
+          "escalate_to": "gcp_admin",
+          "reason": "Warranty disputes require Warranty & Compliance manager review",
+          "boundary_rule": "contractor escalation — warranty_claim_dispute"
+        }
+      },
+      {
+        "state": "denied_final",
+        "description": "Appeal denied — claim closed with final determination",
+        "allowed_actions": [],
+        "terminal": true
+      },
+      {
+        "state": "remedy_in_progress",
+        "description": "Approved remedy being executed — repair, replacement, or credit",
+        "allowed_actions": ["update_remedy_status", "add_photos", "complete_remedy"],
+        "next_states": ["resolved"]
+      },
+      {
+        "state": "resolved",
+        "description": "Claim fully resolved — remedy completed and accepted",
+        "allowed_actions": [],
+        "terminal": true,
+        "auto_action": "Archive claim, update warranty record"
+      }
+    ],
+    "remedy_types": [
+      {"type": "repair", "description": "Repair defective material/installation on-site"},
+      {"type": "replacement", "description": "Replace defective product with new material"},
+      {"type": "credit", "description": "Material credit issued against future GCP purchases"},
+      {"type": "partial_repair", "description": "Partial remedy with documented scope limitation"}
+    ],
+    "claim_form": {
+      "description": "Structured claim submission form",
+      "required_fields": [
+        {"field": "project_id", "label": "Project", "type": "select"},
+        {"field": "assembly_id", "label": "Assembly / Location", "type": "select"},
+        {"field": "claim_type", "label": "Claim Type", "type": "select", "options": ["material_defect", "system_failure", "performance_issue", "premature_degradation"]},
+        {"field": "description", "label": "Description of Issue", "type": "textarea"},
+        {"field": "discovery_date", "label": "Date Issue Discovered", "type": "date"},
+        {"field": "severity", "label": "Severity", "type": "select", "options": ["critical", "major", "minor", "cosmetic"]}
+      ],
+      "optional_fields": [
+        {"field": "photos", "label": "Photos of Issue", "type": "file_upload", "max": 10},
+        {"field": "documents", "label": "Supporting Documents", "type": "file_upload", "max": 5},
+        {"field": "estimated_area_affected", "label": "Estimated Area Affected (sq ft)", "type": "number"},
+        {"field": "weather_conditions", "label": "Weather Conditions at Discovery", "type": "text"},
+        {"field": "installation_date", "label": "Approximate Installation Date", "type": "date"}
+      ]
+    },
+    "escalation_rules": [
+      {
+        "condition": "claim_value > $50,000",
+        "action": "Auto-escalate to gcp_admin",
+        "reason": "Large warranty claims require admin approval",
+        "boundary_rule": "gcp_engineer escalation — warranty_claim_exceeds_threshold"
+      },
+      {
+        "condition": "claim_age > 30 days without resolution",
+        "action": "Notify gcp_admin of stale claim",
+        "reason": "Claims should be resolved within 30 days"
+      },
+      {
+        "condition": "multiple_claims_same_assembly > 2",
+        "action": "Flag for systemic review",
+        "reason": "Recurring issues may indicate broader product or installation problem"
+      }
+    ]
+  },
+  "reporting": {
+    "description": "Warranty analytics and compliance reporting for Keith Berg and GCP management",
+    "reports": [
+      {
+        "name": "Claims Summary",
+        "description": "Open, resolved, and denied claims by period, product, and contractor",
+        "audience": ["gcp_admin", "gcp_engineer"],
+        "filters": ["date_range", "product", "contractor", "claim_type", "severity", "status"]
+      },
+      {
+        "name": "Warranty Exposure",
+        "description": "Total warranty liability across all active projects — aggregated by product and assembly type",
+        "audience": ["gcp_admin"],
+        "metrics": ["total_covered_area", "total_estimated_liability", "expiring_next_90_days", "claims_rate"]
+      },
+      {
+        "name": "Product Reliability",
+        "description": "Claims rate by product — identifies products with higher-than-expected failure rates",
+        "audience": ["gcp_admin", "gcp_engineer"],
+        "metrics": ["claims_per_product", "claims_per_sqft_installed", "average_time_to_failure", "most_common_failure_mode"]
+      },
+      {
+        "name": "Contractor Performance",
+        "description": "Claims rate by installing contractor — identifies installation quality trends",
+        "audience": ["gcp_admin"],
+        "metrics": ["claims_per_contractor", "installation_quality_score", "repeat_claim_rate"]
+      }
+    ]
+  },
+  "data_model": {
+    "warranty_record": {
+      "id": "uuid",
+      "project_id": "uuid",
+      "contractor_id": "uuid",
+      "assembly_id": "uuid — links to shop drawing assembly",
+      "assembly_type": "EIF | AWB | FP | WP | CI | CJ",
+      "assembly_location": "string — building location description",
+      "warranty_type": "product_warranty | system_warranty | labor_warranty",
+      "products_covered": "array — GCP product IDs in this assembly",
+      "all_gcp_products": "boolean — true if 100% GCP products (system warranty eligible)",
+      "warranty_start_date": "ISO8601",
+      "warranty_end_date": "ISO8601",
+      "warranty_years": "integer",
+      "status": "active | expiring_soon | expired | voided | claim_in_progress",
+      "covered_area_sqft": "number",
+      "estimated_value": "number — USD estimated replacement value",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601"
+    },
+    "warranty_claim": {
+      "id": "uuid",
+      "claim_number": "string — sequential (e.g., WC-2026-001)",
+      "warranty_record_id": "uuid",
+      "project_id": "uuid",
+      "contractor_id": "uuid",
+      "submitted_by": "uuid — user who submitted",
+      "assigned_reviewer": "uuid — GCP engineer assigned to review",
+      "claim_type": "material_defect | system_failure | performance_issue | premature_degradation",
+      "severity": "critical | major | minor | cosmetic",
+      "description": "string",
+      "discovery_date": "ISO8601",
+      "estimated_area_affected_sqft": "number | null",
+      "estimated_claim_value": "number — USD | null",
+      "photos": "array — uploaded photo URLs",
+      "documents": "array — supporting document URLs",
+      "status": "draft | submitted | under_review | inspection_scheduled | info_requested | approved | denied | under_appeal | denied_final | remedy_in_progress | resolved",
+      "remedy_type": "repair | replacement | credit | partial_repair | null",
+      "remedy_description": "string | null",
+      "denial_reason": "string | null",
+      "inspection_date": "ISO8601 | null",
+      "inspection_notes": "string | null",
+      "resolution_date": "ISO8601 | null",
+      "resolution_notes": "string | null",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601",
+      "audit_trail": "array — append-only log of all state transitions"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic warranty data for demo mode.",
+    "warranty_records": [
+      {
+        "project": "One Liberty Place — Facade Restoration",
+        "assembly": "EIF — East Elevation",
+        "type": "system_warranty",
+        "start": "2025-06-15",
+        "years": 15,
+        "status": "active",
+        "all_gcp": true,
+        "products": ["Perma Finish EIF-220", "Gold Coat CI-100", "Dur-O-Wal Base Coat BC-200"]
+      },
+      {
+        "project": "30th Street Station — Waterproofing",
+        "assembly": "WP — Below Grade Foundation Walls",
+        "type": "system_warranty",
+        "start": "2024-09-01",
+        "years": 15,
+        "status": "claim_in_progress",
+        "all_gcp": true,
+        "products": ["Bituthene 3000", "Hydroduct 220"]
+      },
+      {
+        "project": "Comcast Technology Center — Level 12 AWB",
+        "assembly": "AWB — Curtain Wall Interface",
+        "type": "product_warranty",
+        "start": "2026-01-10",
+        "years": 10,
+        "status": "active",
+        "all_gcp": false,
+        "products": ["Perm-A-Barrier NPS", "Hydroduct 660", "Third-Party Sealant (non-GCP)"]
+      }
+    ],
+    "claims": [
+      {
+        "claim_number": "WC-2026-001",
+        "project": "30th Street Station — Waterproofing",
+        "type": "performance_issue",
+        "severity": "major",
+        "description": "Water infiltration observed at foundation wall joint at grid line B-7. Approximately 200 sq ft affected area.",
+        "status": "under_review",
+        "submitted_by": "Trinity Building Envelope",
+        "assigned_reviewer": "Nicole Calpin",
+        "discovery_date": "2026-01-28"
+      }
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/warranty/records", "description": "List warranty records (filtered by project, contractor, status)"},
+      {"method": "GET", "path": "/api/warranty/records/:id", "description": "Get warranty record detail"},
+      {"method": "GET", "path": "/api/warranty/projects/:projectId", "description": "Get all warranty records for a project"},
+      {"method": "POST", "path": "/api/warranty/claims", "description": "Create new warranty claim"},
+      {"method": "GET", "path": "/api/warranty/claims", "description": "List claims (filtered by status, project, contractor)"},
+      {"method": "GET", "path": "/api/warranty/claims/:id", "description": "Get claim detail with full audit trail"},
+      {"method": "PATCH", "path": "/api/warranty/claims/:id", "description": "Update claim (status transition, add notes)"},
+      {"method": "POST", "path": "/api/warranty/claims/:id/photos", "description": "Upload claim photos"},
+      {"method": "POST", "path": "/api/warranty/claims/:id/documents", "description": "Upload supporting documents"},
+      {"method": "POST", "path": "/api/warranty/claims/:id/appeal", "description": "Appeal denied claim"},
+      {"method": "GET", "path": "/api/warranty/reports/summary", "description": "Claims summary report"},
+      {"method": "GET", "path": "/api/warranty/reports/exposure", "description": "Warranty exposure report (admin only)"},
+      {"method": "GET", "path": "/api/warranty/reports/product-reliability", "description": "Product reliability report"},
+      {"method": "GET", "path": "/api/warranty/expiring", "description": "Warranties expiring within threshold"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTWarranty.jsx",
+    "description": "Warranty management interface. Coverage tracker with calendar visualization. Claim submission form with photo upload. Claim workflow with state machine UI. Reporting dashboard for admin and engineering. All actions validated through kernel.",
+    "exports": [
+      "SAINTWarranty — main entity component (coverage + claims + routing)",
+      "WarrantyCoverageTracker — project/assembly warranty status with calendar timeline",
+      "WarrantyCalendarView — Gantt-style warranty period visualization",
+      "ClaimSubmissionForm — structured claim form with photo/document upload",
+      "ClaimDetail — full claim view with state machine workflow, notes, and history",
+      "ClaimWorkflow — visual state machine showing claim progression",
+      "WarrantyReports — claims summary, exposure, product reliability dashboards",
+      "ExpirationAlerts — warranties approaching expiration with action prompts"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — VR-SAINT-002 warranty boundary)",
+      "SAINTAuth (user identity, role)",
+      "SAINT_PRODUCT_CONFIG (product warranty terms, system warranty eligibility)",
+      "SAINT_SHOP_DRAWINGS (assembly references, product lists per drawing)"
+    ],
+    "views": {
+      "contractor": "View own warranty coverage, submit claims, track claim status, appeal denials",
+      "gcp_engineer": "Manage claims — review, inspect, approve/deny, assign remedies",
+      "gcp_admin": "Full oversight — all claims, reporting, exposure analysis, contractor performance",
+      "sales_rep": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained component loaded by SAINTShell entity loader. Warranty eligibility driven by SAINT_PRODUCT_CONFIG data."
+  }
+}

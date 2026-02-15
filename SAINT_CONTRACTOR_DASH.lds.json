@@ -1,0 +1,393 @@
+{
+  "_lds": {
+    "uuid": "saint-contractor-dash-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T16:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 3,
+    "sequence": 1,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-003",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Contractor Dashboard",
+    "description": "Contractor-facing command center. Unified view of active projects, shop drawing deliveries, warranty status, submittals, and notifications. Each contractor sees ONLY their own data — kernel-enforced tenant isolation (VR-SAINT-004). Quick-access widgets for most-used tools.",
+    "principle": "One screen, everything a contractor needs. No hunting across tabs. Data isolation absolute — zero cross-tenant leakage."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — validates all dashboard actions, enforces VR-SAINT-004 contractor data isolation",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — contractor role sees own data only, gcp_admin sees all contractors",
+    "shell": "SAINT_SHELL.lds.json — loads via entity loader into main content area",
+    "auth": "SAINT_AUTH.lds.json — contractor identity for data isolation",
+    "shop_drawings": "SAINT_SHOP_DRAWINGS.lds.json — drawing delivery status and download links",
+    "product_config": "SAINT_PRODUCT_CONFIG.lds.json — product catalog quick-access",
+    "warranty": "SAINT_WARRANTY.lds.json — warranty status summary per project",
+    "submittals": "SAINT_SUBMITTALS.lds.json — submittal tracking summary"
+  },
+  "dashboard_layout": {
+    "description": "Responsive grid layout with role-aware widgets. Contractor sees project-centric view. Admin sees contractor management view.",
+    "contractor_view": {
+      "header": {
+        "welcome_message": "Welcome back, {contractor_name}",
+        "last_login": "Last login timestamp",
+        "notification_bell": "Unread notification count with dropdown"
+      },
+      "kpi_row": {
+        "description": "4 summary cards across the top",
+        "cards": [
+          {
+            "id": "active_projects",
+            "label": "Active Projects",
+            "icon": "FolderOpen",
+            "value": "count of projects with status active",
+            "trend": "change from last month",
+            "click_action": "navigate to projects list"
+          },
+          {
+            "id": "pending_drawings",
+            "label": "Drawings Ready",
+            "icon": "FileText",
+            "value": "count of approved shop drawings not yet downloaded",
+            "trend": "new since last login",
+            "click_action": "navigate to shop drawings"
+          },
+          {
+            "id": "open_warranty",
+            "label": "Open Warranty Claims",
+            "icon": "Shield",
+            "value": "count of warranty claims in progress",
+            "trend": "resolved this month",
+            "click_action": "navigate to warranty"
+          },
+          {
+            "id": "pending_submittals",
+            "label": "Submittals Pending",
+            "icon": "ClipboardCheck",
+            "value": "count of submittals awaiting review",
+            "trend": "approved this week",
+            "click_action": "navigate to submittals"
+          }
+        ]
+      },
+      "main_grid": {
+        "description": "2-column responsive grid (stacks on mobile)",
+        "left_column": [
+          {
+            "widget": "active_projects_list",
+            "title": "My Projects",
+            "content": "Project cards with name, status, progress bar, last activity date",
+            "actions": ["view_project_detail", "update_project_status", "upload_field_photos"],
+            "max_items": 5,
+            "see_all_link": "navigate to full projects list"
+          },
+          {
+            "widget": "recent_shop_drawings",
+            "title": "Recent Shop Drawings",
+            "content": "Latest delivered drawings with project name, drawing number, delivery date",
+            "actions": ["download_shop_drawings", "view_material_schedule"],
+            "max_items": 5,
+            "see_all_link": "navigate to shop drawings"
+          }
+        ],
+        "right_column": [
+          {
+            "widget": "activity_feed",
+            "title": "Recent Activity",
+            "content": "Chronological feed of events: drawings delivered, warranty updates, submittal approvals, project changes",
+            "max_items": 10,
+            "includes_timestamps": true
+          },
+          {
+            "widget": "warranty_summary",
+            "title": "Warranty Status",
+            "content": "Active warranty coverage by project with expiration dates and claim status",
+            "actions": ["view_warranty_status", "submit_warranty_claim"],
+            "see_all_link": "navigate to warranty"
+          },
+          {
+            "widget": "quick_actions",
+            "title": "Quick Actions",
+            "content": "Shortcut buttons for common tasks",
+            "buttons": [
+              {"label": "Download Drawings", "action": "navigate to shop drawings", "icon": "Download"},
+              {"label": "Submit Warranty Claim", "action": "navigate to warranty claim form", "icon": "Shield"},
+              {"label": "Upload Field Photos", "action": "open photo upload modal", "icon": "Camera"},
+              {"label": "View Product Catalog", "action": "navigate to product catalog", "icon": "Package"},
+              {"label": "Contact Engineer", "action": "open contact form", "icon": "MessageCircle"},
+              {"label": "Request Submittal Review", "action": "navigate to submittals", "icon": "ClipboardCheck"}
+            ]
+          }
+        ]
+      }
+    },
+    "admin_view": {
+      "description": "GCP admin sees a contractor management overview — all contractors, their project counts, activity levels",
+      "header": {
+        "title": "Contractor Overview",
+        "total_contractors": "count of active contractor accounts",
+        "total_active_projects": "aggregate active project count"
+      },
+      "contractor_table": {
+        "columns": ["contractor_name", "contact_email", "active_projects", "pending_drawings", "open_claims", "last_activity", "status"],
+        "actions": ["view_contractor_detail", "view_contractor_projects", "view_contractor_activity"],
+        "filters": ["status", "region", "project_count", "last_activity_range"],
+        "sort_options": ["name", "active_projects", "last_activity", "open_claims"]
+      }
+    }
+  },
+  "notifications": {
+    "description": "In-app notification system for contractor-relevant events",
+    "notification_types": [
+      {
+        "type": "drawing_delivered",
+        "message": "Shop drawing {drawing_number} for {project_name} is ready for download",
+        "priority": "high",
+        "action": "Navigate to drawing download"
+      },
+      {
+        "type": "warranty_update",
+        "message": "Warranty claim #{claim_id} for {project_name} status changed to {status}",
+        "priority": "medium",
+        "action": "Navigate to warranty detail"
+      },
+      {
+        "type": "submittal_approved",
+        "message": "Submittal package for {project_name} has been approved",
+        "priority": "high",
+        "action": "Navigate to submittal detail"
+      },
+      {
+        "type": "submittal_revision",
+        "message": "Submittal package for {project_name} requires revision — see comments",
+        "priority": "high",
+        "action": "Navigate to submittal detail"
+      },
+      {
+        "type": "product_update",
+        "message": "Product {product_name} used in {project_name} has been updated — review changes",
+        "priority": "medium",
+        "action": "Navigate to product detail"
+      },
+      {
+        "type": "project_milestone",
+        "message": "{project_name} has reached {milestone} phase",
+        "priority": "low",
+        "action": "Navigate to project detail"
+      }
+    ],
+    "delivery": {
+      "in_app": "Bell icon with badge count, dropdown panel with mark-as-read",
+      "email": "Configurable email digest (immediate, daily, weekly, or off)",
+      "preferences": "Contractor can configure which notification types to receive via each channel"
+    }
+  },
+  "projects": {
+    "description": "Contractor project management — view and update projects assigned to them",
+    "project_states": ["pre_construction", "in_progress", "punch_list", "closeout", "warranty_period", "complete"],
+    "project_detail_view": {
+      "header": {
+        "project_name": "string",
+        "project_address": "string",
+        "status": "project state",
+        "progress": "percentage complete",
+        "start_date": "ISO8601",
+        "target_completion": "ISO8601"
+      },
+      "tabs": [
+        {
+          "id": "overview",
+          "label": "Overview",
+          "content": "Project summary, key contacts, timeline, milestones"
+        },
+        {
+          "id": "drawings",
+          "label": "Shop Drawings",
+          "content": "All shop drawings for this project with download links",
+          "source": "SAINT_SHOP_DRAWINGS filtered by project_id"
+        },
+        {
+          "id": "warranty",
+          "label": "Warranty",
+          "content": "Warranty coverage and claims for this project",
+          "source": "SAINT_WARRANTY filtered by project_id"
+        },
+        {
+          "id": "submittals",
+          "label": "Submittals",
+          "content": "Submittal packages for this project",
+          "source": "SAINT_SUBMITTALS filtered by project_id"
+        },
+        {
+          "id": "photos",
+          "label": "Field Photos",
+          "content": "Uploaded field photos with date, location tag, and notes",
+          "actions": ["upload_field_photos", "annotate_photo"]
+        },
+        {
+          "id": "contacts",
+          "label": "Contacts",
+          "content": "Project contacts — GCP engineer, architect, owner",
+          "actions": ["contact_gcp_engineer"]
+        }
+      ]
+    },
+    "field_photos": {
+      "description": "Contractors upload jobsite photos for documentation and communication with GCP engineers",
+      "upload": {
+        "formats": ["JPG", "PNG", "HEIC"],
+        "max_size": "15MB per photo",
+        "max_batch": 20,
+        "metadata": ["date_taken", "location_tag", "description", "assembly_reference"]
+      },
+      "storage": "Cloud storage with CDN delivery",
+      "access": "Contractor who uploaded + assigned GCP engineer + gcp_admin"
+    }
+  },
+  "data_model": {
+    "project": {
+      "id": "uuid",
+      "contractor_id": "uuid — data isolation key",
+      "project_name": "string",
+      "project_address": "string",
+      "project_city": "string",
+      "project_state": "string",
+      "project_zip": "string",
+      "status": "pre_construction | in_progress | punch_list | closeout | warranty_period | complete",
+      "progress_percent": "number — 0-100",
+      "start_date": "ISO8601",
+      "target_completion": "ISO8601",
+      "actual_completion": "ISO8601 | null",
+      "assigned_engineer_id": "uuid — GCP engineer assigned",
+      "architect_name": "string | null",
+      "owner_name": "string | null",
+      "assembly_types": "array — building envelope systems on this project",
+      "total_drawings": "integer",
+      "total_submittals": "integer",
+      "active_warranty_claims": "integer",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601"
+    },
+    "field_photo": {
+      "id": "uuid",
+      "project_id": "uuid",
+      "contractor_id": "uuid",
+      "uploaded_by": "uuid",
+      "uploaded_at": "ISO8601",
+      "file_url": "string",
+      "thumbnail_url": "string",
+      "file_size_bytes": "integer",
+      "date_taken": "ISO8601 | null",
+      "location_tag": "string | null",
+      "description": "string",
+      "assembly_reference": "string | null — which assembly this photo documents",
+      "annotations": "array | null"
+    },
+    "notification": {
+      "id": "uuid",
+      "contractor_id": "uuid",
+      "type": "string — notification type",
+      "message": "string",
+      "priority": "high | medium | low",
+      "action_url": "string — deep link to relevant entity",
+      "read": "boolean",
+      "read_at": "ISO8601 | null",
+      "created_at": "ISO8601"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic data for demo mode. Trinity Building Envelope as contractor.",
+    "contractor": {
+      "name": "Trinity Building Envelope",
+      "contact": "James Thornton, Project Manager",
+      "email": "info@trinity-demo.saint.dev"
+    },
+    "projects": [
+      {
+        "project_name": "One Liberty Place — Facade Restoration",
+        "address": "1650 Market Street, Philadelphia, PA 19103",
+        "status": "in_progress",
+        "progress": 65,
+        "assemblies": ["EIF"],
+        "drawings": 4,
+        "submittals": 2,
+        "warranty_claims": 0
+      },
+      {
+        "project_name": "Comcast Technology Center — Level 12 AWB",
+        "address": "1800 Arch Street, Philadelphia, PA 19103",
+        "status": "pre_construction",
+        "progress": 15,
+        "assemblies": ["AWB"],
+        "drawings": 2,
+        "submittals": 1,
+        "warranty_claims": 0
+      },
+      {
+        "project_name": "30th Street Station — Waterproofing",
+        "address": "2955 Market Street, Philadelphia, PA 19104",
+        "status": "warranty_period",
+        "progress": 100,
+        "assemblies": ["WP"],
+        "drawings": 6,
+        "submittals": 3,
+        "warranty_claims": 1
+      }
+    ],
+    "recent_activity": [
+      {"type": "drawing_delivered", "message": "Shop drawing SD-004 for One Liberty Place is ready", "time": "2 hours ago"},
+      {"type": "submittal_approved", "message": "Submittal for Comcast Technology Center approved", "time": "1 day ago"},
+      {"type": "warranty_update", "message": "Warranty claim #WC-001 for 30th Street Station under review", "time": "3 days ago"},
+      {"type": "project_milestone", "message": "One Liberty Place reached 65% completion", "time": "1 week ago"}
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/contractor/dashboard", "description": "Aggregated dashboard data for current contractor"},
+      {"method": "GET", "path": "/api/contractor/projects", "description": "List contractor's projects"},
+      {"method": "GET", "path": "/api/contractor/projects/:id", "description": "Get project detail"},
+      {"method": "PATCH", "path": "/api/contractor/projects/:id/status", "description": "Update project status"},
+      {"method": "POST", "path": "/api/contractor/projects/:id/photos", "description": "Upload field photos"},
+      {"method": "GET", "path": "/api/contractor/projects/:id/photos", "description": "List project photos"},
+      {"method": "GET", "path": "/api/contractor/notifications", "description": "List notifications"},
+      {"method": "PATCH", "path": "/api/contractor/notifications/:id/read", "description": "Mark notification as read"},
+      {"method": "GET", "path": "/api/contractor/notifications/preferences", "description": "Get notification preferences"},
+      {"method": "PUT", "path": "/api/contractor/notifications/preferences", "description": "Update notification preferences"},
+      {"method": "GET", "path": "/api/admin/contractors", "description": "List all contractors (admin only)"},
+      {"method": "GET", "path": "/api/admin/contractors/:id", "description": "Get contractor detail (admin only)"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTContractorDash.jsx",
+    "description": "Contractor command center with KPI cards, project list, activity feed, warranty summary, and quick actions. Responsive grid layout. Admin sees contractor management table. All data filtered by contractor_id at kernel level.",
+    "exports": [
+      "SAINTContractorDash — main entity component (dashboard + routing)",
+      "ContractorKPICards — 4 summary cards (projects, drawings, warranty, submittals)",
+      "ProjectList — contractor's project cards with status and progress",
+      "ProjectDetail — tabbed project view (overview, drawings, warranty, submittals, photos, contacts)",
+      "ActivityFeed — chronological event feed with timestamps and action links",
+      "WarrantySummaryWidget — warranty coverage overview per project",
+      "QuickActions — shortcut button grid for common tasks",
+      "NotificationPanel — bell dropdown with notification list and mark-as-read",
+      "FieldPhotoUpload — drag-drop multi-photo upload with metadata",
+      "AdminContractorTable — admin view of all contractors (admin only)"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — VR-SAINT-004 data isolation)",
+      "SAINTAuth (contractor identity)",
+      "SAINT_SHOP_DRAWINGS (drawing delivery data)",
+      "SAINT_WARRANTY (warranty status data)",
+      "SAINT_SUBMITTALS (submittal tracking data)"
+    ],
+    "views": {
+      "contractor": "Full dashboard — own projects, own drawings, own warranty, own submittals",
+      "gcp_admin": "Contractor management table + ability to view any contractor's dashboard",
+      "gcp_engineer": "View assigned contractor projects (via SAINT_PROJECTS navigation, not this entity)",
+      "sales_rep": "No access — kernel DENIES load_entity for this role"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Self-contained dashboard component loaded by SAINTShell entity loader. Data isolation enforced at kernel level, not UI level."
+  }
+}

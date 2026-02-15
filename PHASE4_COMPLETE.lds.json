@@ -1,0 +1,114 @@
+{
+  "_lds": {
+    "uuid": "saint-phase4-complete-2026-001",
+    "type": "phase_summary",
+    "version": "1.0.0",
+    "created": "2026-02-14T19:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 4,
+    "status": "COMPLETE",
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-004",
+      "status": "AUTHORIZED"
+    }
+  },
+  "summary": {
+    "phase_name": "SALES_CRM",
+    "entities_created": 3,
+    "files": [
+      "SAINT_PIPELINE.lds.json — Sales pipeline with 8 deal stages (lead through closed-won/lost), kanban + list + forecast + funnel views, 8 activity types with logging, forecasting engine with commit/best-case/pipeline categories, opportunity-to-deal conversion from scraper, post-close project creation trigger.",
+      "SAINT_TERRITORIES.lds.json — Territory management with 3-level hierarchy (region/district/territory), interactive Mapbox map with 5 overlay views, 6 territory operations (create, modify, reassign, split, merge, request change), 10 performance metrics, territory change request workflow, coverage gap detection.",
+      "SAINT_REPORTING.lds.json — Cross-entity analytics with 5 report categories (sales, engineering, warranty, contractor, platform), 15 individual reports, 3 pre-built dashboards (executive, sales, engineering), export to CSV/PDF/XLSX, scheduled report delivery, drill-down navigation, saved report configurations."
+    ],
+    "key_features_delivered": [
+      "8-stage deal pipeline with defined entry/exit criteria per stage",
+      "Kanban drag-and-drop board with weighted value columns",
+      "Revenue forecasting with commit/best-case/pipeline/upside categories",
+      "Win/loss analysis with competitor tracking and loss reason taxonomy",
+      "8 sales activity types with per-deal activity logging and timeline",
+      "Opportunity-to-deal conversion from SAINT_OPP_SCRAPER",
+      "Post-close triggers: auto-create project, assign engineer, initiate submittals",
+      "Large deal escalation ($500K threshold) to gcp_admin",
+      "3-level territory hierarchy: Region → District → Territory",
+      "Interactive territory map with 5 overlay views (boundaries, opportunity density, pipeline heat, coverage gaps, rep locations)",
+      "6 territory operations with impact analysis before confirmation",
+      "Territory change request workflow (rep request → admin approve/deny)",
+      "10 territory performance metrics with comparison views",
+      "Coverage gap detection for unassigned ZIP codes",
+      "15 individual reports across 5 categories",
+      "Executive dashboard: revenue, pipeline, opportunities, warranty, drawings",
+      "Sales dashboard: pipeline, quota attainment, win rate, funnel",
+      "Engineering dashboard: drawing throughput, submittal approval, product usage",
+      "Report export (CSV, PDF, XLSX) and scheduled delivery",
+      "Drill-down navigation from summary → detail → individual record",
+      "Saved report configurations and favorites",
+      "Period-over-period and year-over-year comparison"
+    ],
+    "cross_entity_integration": {
+      "SAINT_PIPELINE_to_OPP_SCRAPER": "Opportunity-to-deal conversion, lead auto-creation for score >= 70",
+      "SAINT_PIPELINE_to_TERRITORIES": "Territory-scoped pipeline filtering and forecasting",
+      "SAINT_PIPELINE_to_CONTRACTOR_DASH": "Post-close project creation",
+      "SAINT_PIPELINE_to_SUBMITTALS": "Post-close submittal package initiation",
+      "SAINT_TERRITORIES_to_OPP_SCRAPER": "Territory-filtered opportunity assignment",
+      "SAINT_TERRITORIES_to_PIPELINE": "Territory-scoped pipeline data",
+      "SAINT_REPORTING_to_ALL": "Cross-entity data aggregation from all Phase 2-4 entities"
+    },
+    "role_access_matrix": {
+      "gcp_admin": {
+        "SAINT_PIPELINE": "Full access — all pipelines, all territories, company-wide forecast",
+        "SAINT_TERRITORIES": "Full access — create, modify, reassign, manage change requests",
+        "SAINT_REPORTING": "Full access — executive dashboard, all reports"
+      },
+      "gcp_engineer": {
+        "SAINT_PIPELINE": "DENIED — not engineering scope",
+        "SAINT_TERRITORIES": "DENIED — not engineering scope",
+        "SAINT_REPORTING": "Engineering dashboard — own drawing throughput, submittals, product usage"
+      },
+      "sales_rep": {
+        "SAINT_PIPELINE": "Own pipeline — manage deals, log activities, view forecast",
+        "SAINT_TERRITORIES": "Own territory — view metrics, request changes",
+        "SAINT_REPORTING": "Sales dashboard — own pipeline, territory, activity"
+      },
+      "contractor": {
+        "SAINT_PIPELINE": "DENIED — not contractor scope",
+        "SAINT_TERRITORIES": "DENIED — not contractor scope",
+        "SAINT_REPORTING": "DENIED — contractor sees reports via Contractor Dashboard"
+      }
+    }
+  },
+  "phase_verification": {
+    "checklist": [
+      {"item": "SAINT_PIPELINE.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_TERRITORIES.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "SAINT_REPORTING.lds.json created and valid JSON", "status": "PASS"},
+      {"item": "All entities reference parent saint-master-2026-001", "status": "PASS"},
+      {"item": "All entities declare phase: 4 with correct sequence numbers", "status": "PASS"},
+      {"item": "All entities have react_component block with exports", "status": "PASS"},
+      {"item": "All entities have demo_data for demo mode", "status": "PASS"},
+      {"item": "All entities have backend API endpoints defined", "status": "PASS"},
+      {"item": "Role access defined for all 4 roles across all 3 entities", "status": "PASS"},
+      {"item": "Cross-entity dependencies documented", "status": "PASS"},
+      {"item": "Entity filenames match SAINT_MASTER_INDEX.lds.json manifest", "status": "PASS"},
+      {"item": "Pipeline deal stages have valid state transitions", "status": "PASS"},
+      {"item": "Territory VR-SAINT-003 enforcement documented", "status": "PASS"},
+      {"item": "Reporting aggregates data from all Phase 2-4 entities", "status": "PASS"}
+    ]
+  },
+  "next_phase_instructions": {
+    "phase": 5,
+    "name": "ENTERPRISE",
+    "l0_command": "L0-CMD-2026-0214-005 (to be issued)",
+    "entities_to_build": [
+      "SAINT_WHITE_LABEL.lds.json — White-label branding engine. Theme configuration, logo/color/domain swapping, brand preview, client branding management. Enables Saint-Gobain to reskin SAINT for different business units or partners.",
+      "SAINT_SSO.lds.json — Enterprise SSO integration. SAML 2.0 and OIDC support for Saint-Gobain corporate identity. JIT user provisioning, IDP group-to-role mapping, session management.",
+      "SAINT_API.lds.json — External API layer. RESTful API for third-party integrations. API key management, rate limiting, webhook subscriptions, developer documentation."
+    ],
+    "dependencies": "All Phase 1-4 entities. White Label builds on shell theming. SSO extends auth. API exposes entity operations externally.",
+    "command_for_next_chat": "Continue building PROJECT SAINT Phase 5. Reference SAINT_MASTER_INDEX.lds.json and all Phase 1-4 entities. Build the ENTERPRISE tier: White Label, SSO, and API. Each as a self-contained .lds.json entity file."
+  },
+  "assembly_preview": {
+    "phases_complete": "4 of 6",
+    "entities_complete": "13 of 18 total (4 Phase 1 + 3 Phase 2 + 3 Phase 3 + 3 Phase 4)"
+  }
+}

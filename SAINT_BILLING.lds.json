@@ -1,0 +1,341 @@
+{
+  "_lds": {
+    "uuid": "saint-billing-2026-001",
+    "type": "tool_entity",
+    "version": "1.0.0",
+    "created": "2026-02-14T22:00:00Z",
+    "parent": "saint-master-2026-001",
+    "phase": 6,
+    "sequence": 2,
+    "governance": {
+      "chain": "L0 Human → L1 LDS Kernel V1 → L2 Proposer",
+      "document_id": "L0-CMD-2026-0214-006",
+      "status": "AUTHORIZED"
+    }
+  },
+  "core": {
+    "name": "SAINT Billing",
+    "description": "Subscription management and billing for PROJECT SAINT. Stripe integration for payment processing, usage-based metering for API and storage, invoice generation, plan management. Implements the pricing model defined in SAINT_MASTER_INDEX.",
+    "principle": "Billing changes above $10,000/month require L0 governance approval (gcp_admin escalation rule). All billing actions audited. Subscription status affects feature access but NOT kernel behavior — kernel always validates."
+  },
+  "dependencies": {
+    "kernel": "SAINT_KERNEL.lds.json — billing actions validated, escalation on threshold",
+    "boundaries": "SAINT_BOUNDARIES.lds.json — gcp_admin manages billing, escalation at $10K threshold",
+    "auth": "SAINT_AUTH.lds.json — tenant identity for billing association",
+    "api": "SAINT_API.lds.json — API usage metering for billing",
+    "master_index": "SAINT_MASTER_INDEX.lds.json — pricing model reference"
+  },
+  "pricing_plans": {
+    "description": "Premium-only pricing model — no free tier. From SAINT_MASTER_INDEX pricing_model.",
+    "plans": [
+      {
+        "id": "contractor",
+        "name": "Contractor",
+        "price_monthly": 500,
+        "price_annual": 5000,
+        "description": "Dashboard, submittals, warranty tracking, product lookup",
+        "features": [
+          "Contractor Dashboard with project tracking",
+          "Shop drawing downloads (read-only)",
+          "Warranty status viewing and claim submission",
+          "Submittal package viewing",
+          "Product catalog browsing",
+          "Field photo upload",
+          "Email notifications"
+        ],
+        "limits": {
+          "users": 5,
+          "projects": 20,
+          "storage_gb": 10,
+          "api_requests_monthly": 5000
+        }
+      },
+      {
+        "id": "engineer",
+        "name": "GCP Engineer",
+        "price_monthly": 2000,
+        "price_annual": 20000,
+        "description": "All contractor tools + shop drawings + product config",
+        "features": [
+          "Everything in Contractor plan",
+          "Shop drawing creation and management",
+          "Assembly letter AI parsing",
+          "DXF generation and export",
+          "Product configurator with assembly builder",
+          "Submittal package creation and management",
+          "Warranty claim management",
+          "Engineering reports"
+        ],
+        "limits": {
+          "users": 10,
+          "projects": "unlimited",
+          "shop_drawings_monthly": 50,
+          "storage_gb": 50,
+          "api_requests_monthly": 25000
+        }
+      },
+      {
+        "id": "sales",
+        "name": "Sales Team",
+        "price_monthly": 3000,
+        "price_annual": 30000,
+        "description": "Opportunity scraper + pipeline + territory + reporting",
+        "features": [
+          "Opportunity Scraper with AI classification",
+          "Sales pipeline management",
+          "Territory management and mapping",
+          "Sales reporting and forecasting",
+          "Daily opportunity digest alerts",
+          "Product catalog browsing",
+          "CRM activity logging"
+        ],
+        "limits": {
+          "users": 15,
+          "territories": 10,
+          "api_requests_monthly": 50000,
+          "scraper_sources": "all"
+        }
+      },
+      {
+        "id": "enterprise",
+        "name": "Enterprise",
+        "price_monthly": 15000,
+        "price_annual": 150000,
+        "description": "Full platform + white label + SSO + API + dedicated support",
+        "features": [
+          "Everything in all plans",
+          "White-label branding",
+          "Enterprise SSO (SAML 2.0 / OIDC)",
+          "External API access with webhooks",
+          "Unlimited users",
+          "Custom integrations",
+          "Dedicated support",
+          "SLA guarantee (99.9% uptime)",
+          "Custom reporting"
+        ],
+        "limits": {
+          "users": "unlimited",
+          "projects": "unlimited",
+          "shop_drawings_monthly": "unlimited",
+          "storage_gb": 500,
+          "api_requests_monthly": 500000,
+          "webhooks": 25,
+          "api_keys": 20
+        }
+      }
+    ],
+    "add_ons": [
+      {
+        "id": "extra_storage",
+        "name": "Additional Storage",
+        "price": "$5/GB/month",
+        "description": "Additional cloud storage beyond plan limit"
+      },
+      {
+        "id": "extra_api",
+        "name": "Additional API Requests",
+        "price": "$0.01/request over limit",
+        "description": "Pay-as-you-go API requests beyond plan limit"
+      },
+      {
+        "id": "extra_drawings",
+        "name": "Additional Shop Drawings",
+        "price": "$25/drawing over limit",
+        "description": "Additional shop drawing generations beyond monthly limit"
+      },
+      {
+        "id": "priority_support",
+        "name": "Priority Support",
+        "price": "$500/month",
+        "description": "Priority support queue with 4-hour response SLA"
+      }
+    ],
+    "expedited_rate": {
+      "description": "Emergency/expedited work billed at premium rate",
+      "multiplier": "1.5x to 2.0x standard rate",
+      "authorization": "Requires gcp_admin approval before applying"
+    }
+  },
+  "stripe_integration": {
+    "description": "Stripe handles payment processing, subscription lifecycle, and invoicing",
+    "features": [
+      {
+        "feature": "subscription_management",
+        "description": "Create, upgrade, downgrade, and cancel subscriptions",
+        "stripe_objects": ["Customer", "Subscription", "Price", "Product"]
+      },
+      {
+        "feature": "payment_methods",
+        "description": "Credit card, ACH, wire transfer for enterprise",
+        "stripe_objects": ["PaymentMethod", "SetupIntent"]
+      },
+      {
+        "feature": "invoicing",
+        "description": "Automatic monthly invoicing with itemized line items",
+        "stripe_objects": ["Invoice", "InvoiceItem"]
+      },
+      {
+        "feature": "usage_metering",
+        "description": "Report usage for API requests, storage, and shop drawings",
+        "stripe_objects": ["UsageRecord", "SubscriptionItem (metered)"]
+      },
+      {
+        "feature": "proration",
+        "description": "Pro-rated charges for mid-cycle plan changes",
+        "behavior": "Stripe automatic proration"
+      },
+      {
+        "feature": "webhooks",
+        "description": "Stripe webhook events for subscription lifecycle",
+        "events": ["invoice.paid", "invoice.payment_failed", "customer.subscription.updated", "customer.subscription.deleted"]
+      }
+    ],
+    "checkout_flow": {
+      "new_subscription": "Stripe Checkout Session → select plan → enter payment → activate",
+      "upgrade": "In-app plan selector → confirm proration → Stripe updates subscription",
+      "downgrade": "In-app plan selector → effective at next billing cycle",
+      "cancel": "Cancellation request → confirmation → access until end of billing period"
+    }
+  },
+  "usage_tracking": {
+    "description": "Track usage metrics for metered billing and plan limit enforcement",
+    "meters": [
+      {
+        "meter": "api_requests",
+        "description": "API requests per billing period",
+        "source": "SAINT_API request logs",
+        "billing": "Included up to plan limit, then $0.01/request"
+      },
+      {
+        "meter": "storage_gb",
+        "description": "Total storage used (drawings, photos, documents)",
+        "source": "Cloud storage metrics",
+        "billing": "Included up to plan limit, then $5/GB/month"
+      },
+      {
+        "meter": "shop_drawings",
+        "description": "Shop drawings generated per month",
+        "source": "SAINT_SHOP_DRAWINGS generation events",
+        "billing": "Included up to plan limit, then $25/drawing"
+      },
+      {
+        "meter": "active_users",
+        "description": "Unique active users per billing period",
+        "source": "SAINT_AUTH login events",
+        "billing": "Included up to plan limit, overage varies by plan"
+      }
+    ],
+    "limit_enforcement": {
+      "soft_limit": "Warning at 80% usage — admin notification",
+      "hard_limit": "At 100% — feature restricted (not blocked) with upgrade prompt",
+      "grace_period": "5% overage allowed before hard enforcement"
+    }
+  },
+  "data_model": {
+    "subscription": {
+      "id": "uuid",
+      "tenant_id": "uuid",
+      "plan_id": "string — contractor | engineer | sales | enterprise",
+      "stripe_customer_id": "string",
+      "stripe_subscription_id": "string",
+      "status": "active | past_due | canceled | trialing | paused",
+      "billing_cycle": "monthly | annual",
+      "current_period_start": "ISO8601",
+      "current_period_end": "ISO8601",
+      "monthly_amount": "number — USD",
+      "add_ons": "array — active add-on IDs",
+      "created_at": "ISO8601",
+      "updated_at": "ISO8601"
+    },
+    "invoice": {
+      "id": "uuid",
+      "subscription_id": "uuid",
+      "stripe_invoice_id": "string",
+      "period_start": "ISO8601",
+      "period_end": "ISO8601",
+      "subtotal": "number — USD",
+      "tax": "number — USD",
+      "total": "number — USD",
+      "status": "draft | open | paid | void | uncollectible",
+      "paid_at": "ISO8601 | null",
+      "pdf_url": "string — Stripe-hosted invoice PDF",
+      "line_items": "array — itemized charges"
+    },
+    "usage_record": {
+      "id": "uuid",
+      "subscription_id": "uuid",
+      "meter": "string — api_requests | storage_gb | shop_drawings | active_users",
+      "quantity": "number",
+      "recorded_at": "ISO8601",
+      "billing_period": "string — YYYY-MM"
+    }
+  },
+  "demo_data": {
+    "description": "Synthetic billing data for demo mode.",
+    "subscription": {
+      "plan": "Enterprise",
+      "status": "active",
+      "billing_cycle": "annual",
+      "annual_amount": 150000,
+      "next_invoice": "2026-03-01",
+      "add_ons": ["priority_support"]
+    },
+    "usage_current_period": {
+      "api_requests": {"used": 42500, "limit": 500000, "percent": 8.5},
+      "storage_gb": {"used": 12.4, "limit": 500, "percent": 2.5},
+      "shop_drawings": {"used": 7, "limit": "unlimited"},
+      "active_users": {"used": 6, "limit": "unlimited"}
+    },
+    "recent_invoices": [
+      {"period": "January 2026", "amount": 12917, "status": "paid"},
+      {"period": "December 2025", "amount": 12917, "status": "paid"},
+      {"period": "November 2025", "amount": 12917, "status": "paid"}
+    ]
+  },
+  "backend": {
+    "api_endpoints": [
+      {"method": "GET", "path": "/api/billing/subscription", "description": "Get current subscription details"},
+      {"method": "POST", "path": "/api/billing/subscription/checkout", "description": "Create Stripe Checkout Session for new subscription"},
+      {"method": "PATCH", "path": "/api/billing/subscription/plan", "description": "Change subscription plan (upgrade/downgrade)"},
+      {"method": "POST", "path": "/api/billing/subscription/cancel", "description": "Cancel subscription"},
+      {"method": "GET", "path": "/api/billing/invoices", "description": "List invoices"},
+      {"method": "GET", "path": "/api/billing/invoices/:id", "description": "Get invoice detail"},
+      {"method": "GET", "path": "/api/billing/usage", "description": "Get current usage metrics"},
+      {"method": "GET", "path": "/api/billing/usage/history", "description": "Get usage history by period"},
+      {"method": "GET", "path": "/api/billing/payment-methods", "description": "List payment methods"},
+      {"method": "POST", "path": "/api/billing/payment-methods", "description": "Add payment method"},
+      {"method": "DELETE", "path": "/api/billing/payment-methods/:id", "description": "Remove payment method"},
+      {"method": "GET", "path": "/api/billing/plans", "description": "List available plans and pricing"},
+      {"method": "POST", "path": "/api/billing/add-ons/:id", "description": "Add add-on to subscription"},
+      {"method": "DELETE", "path": "/api/billing/add-ons/:id", "description": "Remove add-on"},
+      {"method": "POST", "path": "/api/billing/stripe-webhook", "description": "Stripe webhook endpoint"}
+    ]
+  },
+  "react_component": {
+    "filename": "SAINTBilling.jsx",
+    "description": "Billing management interface. Current plan overview with usage meters. Plan comparison and upgrade flow. Invoice history with PDF download. Payment method management. Add-on configuration.",
+    "exports": [
+      "SAINTBilling — main entity component (billing management + routing)",
+      "SubscriptionOverview — current plan, status, usage gauges, next invoice date",
+      "PlanComparison — side-by-side plan feature and pricing comparison",
+      "PlanUpgradeFlow — upgrade/downgrade wizard with proration preview",
+      "UsageDashboard — current period usage meters with trend charts",
+      "InvoiceHistory — invoice list with status, amount, and PDF download",
+      "PaymentMethods — payment method list with add/remove",
+      "AddOnManager — active add-ons with toggle controls"
+    ],
+    "dependencies": [
+      "SAINTKernel (validation context — billing threshold escalation)",
+      "SAINTAuth (tenant identity)",
+      "@stripe/stripe-js (Stripe Elements for payment forms)",
+      "SAINT_API (API usage metering data)"
+    ],
+    "views": {
+      "gcp_admin": "Full access — manage subscription, view invoices, manage payment methods",
+      "gcp_engineer": "No access — kernel DENIES",
+      "sales_rep": "No access — kernel DENIES",
+      "contractor": "No access — kernel DENIES"
+    },
+    "code_reference": "Follows TradeOS entity pattern. Stripe handles payment processing — SAINT stores subscription state and usage metrics."
+  }
+}
