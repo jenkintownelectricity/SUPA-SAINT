@@ -1,0 +1,91 @@
+{
+  "_lds": {
+    "v": "0.1.0",
+    "id": "lds:construction/assembly/power-distribution-node",
+    "type": "electrical_subassembly",
+    "created_at": "2024-01-15T12:00:00Z",
+    "origin": "https://github.com/jenkintownelectricity/SUPA-SAINT.git"
+  },
+
+  "vectors": {
+    "category": [
+      "construction:electrical",
+      "assembly:power-systems",
+      "deployment:field-node"
+    ],
+
+    "spatial": {
+      "bounds": {
+        "width": 800,
+        "height": 1600,
+        "depth": 400
+      },
+      "units": "millimeters"
+    },
+
+    "lifecycle": {
+      "maintenance_interval": {
+        "value": 18,
+        "unit": "months"
+      },
+      "expected_service_years": 25
+    },
+
+    "performance": {
+      "voltage_class": "480V-3PH",
+      "continuous_current_rating_amps": 800,
+      "thermal_rating": {
+        "min_operating_c": -20,
+        "max_operating_c": 55
+      },
+      "ingress_protection": "IP65"
+    },
+
+    "certification": {
+      "UL": ["UL891"],
+      "IEC": ["IEC 61439-2"],
+      "ISO": ["ISO 9001"]
+    }
+  },
+
+  "core": {
+    "name": "Power Distribution Node",
+    "manufacturer": "Jenkintown Electricity Corporation",
+
+    "bom_structure": [
+      {
+        "role": "main_bus",
+        "material_type": "copper-bus-bar",
+        "quantity": 20,
+        "unit": "meters"
+      },
+      {
+        "role": "breaker_array",
+        "material_type": "molded-case-circuit-breaker",
+        "quantity": 12,
+        "unit": "units"
+      },
+      {
+        "role": "enclosure",
+        "material_type": "powder-coated-steel",
+        "quantity": 1,
+        "unit": "unit"
+      }
+    ]
+  },
+
+  "inference": {
+    "requires": [
+      "lds:construction/material/copper-conductors",
+      "lds:construction/component/circuit-breaker"
+    ],
+    "implies": [
+      "lds:construction/assembly/field-installation-ready",
+      "lds:construction/assembly/high-current-capable"
+    ]
+  },
+
+  "media": {
+    "spec_sheet": "https://github.com/jenkintownelectricity/SUPA-SAINT.git/blob/main/docs/power-node-specification.pdf"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "@context": {
+    "lds": "https://schema.lefebvredesign.com/lds#",
+    "name": "lds:name",
+    "manufacturer": "lds:manufacturer",
+    "relates_to": { "@id": "lds:relates_to", "@type": "@id" },
+    "requires": { "@id": "lds:requires", "@type": "@id" },
+    "implies": { "@id": "lds:implies", "@type": "@id" }
+  },
+
+  "@id": "lds:construction/assembly/supa-saint-integration-unit",
+  "@type": "lds:MechanicalAssembly",
+
+  "name": "SUPA-SAINT Integration Assembly Unit",
+  "manufacturer": "Jenkintown Electricity Corporation",
+
+  "relates_to": [
+    "lds:construction/assembly/power-distribution-node",
+    "lds:construction/assembly/control-interface-module",
+    "lds:construction/assembly/data-acquisition-system"
+  ],
+
+  "requires": [
+    "lds:construction/material/structural-steel",
+    "lds:construction/material/copper-conductors",
+    "lds:construction/material/aluminum-alloy",
+    "lds:construction/component/industrial-controller",
+    "lds:construction/component/power-supply-unit"
+  ],
+
+  "implies": [
+    "lds:construction/assembly/field-installation-ready",
+    "lds:construction/assembly/commissioning-enabled",
+    "lds:construction/assembly/monitoring-capable"
+  ]
+}
