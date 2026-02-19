@@ -26,6 +26,8 @@ Quick reference for all entity UUIDs, types, and status.
 | 18 | Admin | saint-admin-2026-001 | tool_entity | 6 | 1 | ACTIVE |
 | 19 | Billing | saint-billing-2026-001 | tool_entity | 6 | 2 | ACTIVE |
 | 20 | Integrations | saint-integrations-2026-001 | tool_entity | 6 | 3 | ACTIVE |
+| 21 | Integration Assembly | supa-saint-integration-unit | mechanical_assembly | HW | 1 | ACTIVE |
+| 22 | Power Distribution Node | power-distribution-node | electrical_subassembly | HW | 2 | ACTIVE |
 
 ---
 
@@ -84,6 +86,10 @@ SAINT_ADMIN ───────────→ SAINT_AUTH (user management)
 SAINT_ADMIN ───────────→ SAINT_KERNEL (audit log)
 SAINT_BILLING ─────────→ SAINT_API (usage metering)
 SAINT_INTEGRATIONS ────→ SAINT_API (data exchange layer)
+
+SUPA_SAINT_INTEGRATION_ASSEMBLY ──→ power-distribution-node (power delivery)
+SUPA_SAINT_INTEGRATION_ASSEMBLY ──→ control-interface-module (system control)
+SUPA_SAINT_INTEGRATION_ASSEMBLY ──→ data-acquisition-system (monitoring)
 ```
 
 ---

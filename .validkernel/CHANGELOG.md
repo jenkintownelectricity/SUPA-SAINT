@@ -43,6 +43,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Hardware: Integration Assembly
+- **Added** SUPA_SAINT_INTEGRATION_ASSEMBLY.lds.json — Mechanical assembly unit definition (BOM: 2x industrial-grade PCB controllers, 48m copper bus bar, 120kg structural steel frame, 8x aluminum heat sinks, 500m shielded cabling)
+- Spatial bounds: 2400x1800x600mm enclosure, units explicitly declared (mm)
+- Lifecycle vectors: 12-month maintenance interval, 20-year expected service life
+- Performance envelope: 480V-3PH, -10C to 50C thermal rating, IP54 ingress protection
+- Certification: UL508A, IEC 61439-1, ISO 9001
+- Install phase: commissioning
+- **Added** SUPA_SAINT_INTEGRATION_ASSEMBLY.jsonld — Graph-ready JSON-LD variant for RDF/Neo4j ingestion
+- **Added** SUPA_SAINT_POWER_DISTRIBUTION_NODE.lds.json — Electrical subassembly dependency (800A continuous, 20m copper bus, 12x MCCBs, IP65, UL891, IEC 61439-2)
+
 ### Planned: Assembly Phase
 - SAINT_ASSEMBLER.lds.json — Code extraction from entity definitions, scaffold runnable application
 - Next.js application scaffold with all 18 entity components

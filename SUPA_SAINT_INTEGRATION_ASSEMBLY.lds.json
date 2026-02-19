@@ -1,0 +1,120 @@
+{
+  "_lds": {
+    "v": "0.1.0",
+    "id": "lds:construction/assembly/supa-saint-integration-unit",
+    "type": "mechanical_assembly",
+    "created_at": "2024-01-15T12:00:00Z",
+    "origin": "https://github.com/jenkintownelectricity/SUPA-SAINT.git"
+  },
+
+  "vectors": {
+    "category": [
+      "construction:mechanical",
+      "assembly:integrated-systems",
+      "material:composite",
+      "systems:electrical-integration",
+      "deployment:distributed"
+    ],
+
+    "spatial": {
+      "bounds": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "width": 2400,
+        "height": 1800,
+        "depth": 600
+      },
+      "units": "millimeters"
+    },
+
+    "temporal": {
+      "install_phase": "commissioning"
+    },
+
+    "lifecycle": {
+      "maintenance_interval": {
+        "value": 12,
+        "unit": "months"
+      },
+      "expected_service_years": 20
+    },
+
+    "performance": {
+      "voltage_class": "480V-3PH",
+      "thermal_rating": {
+        "min_operating_c": -10,
+        "max_operating_c": 50
+      },
+      "ingress_protection": "IP54"
+    },
+
+    "certification": {
+      "UL": ["UL508A"],
+      "IEC": ["IEC 61439-1"],
+      "ISO": ["ISO 9001"]
+    }
+  },
+
+  "core": {
+    "name": "SUPA-SAINT Integration Assembly Unit",
+    "manufacturer": "Jenkintown Electricity Corporation",
+
+    "bom_structure": [
+      {
+        "role": "primary_controller",
+        "material_type": "industrial-grade-pcb",
+        "quantity": 2,
+        "unit": "units"
+      },
+      {
+        "role": "power_distribution",
+        "material_type": "copper-bus-bar",
+        "quantity": 48,
+        "unit": "meters"
+      },
+      {
+        "role": "structural_frame",
+        "material_type": "structural-steel",
+        "quantity": 120,
+        "unit": "kilograms"
+      },
+      {
+        "role": "thermal_management",
+        "material_type": "aluminum-heat-sink",
+        "quantity": 8,
+        "unit": "pieces"
+      },
+      {
+        "role": "signal_integrity",
+        "material_type": "shielded-cabling",
+        "quantity": 500,
+        "unit": "meters"
+      }
+    ]
+  },
+
+  "inference": {
+    "relates_to": [
+      "lds:construction/assembly/power-distribution-node",
+      "lds:construction/assembly/control-interface-module",
+      "lds:construction/assembly/data-acquisition-system"
+    ],
+    "requires": [
+      "lds:construction/material/structural-steel",
+      "lds:construction/material/copper-conductors",
+      "lds:construction/material/aluminum-alloy",
+      "lds:construction/component/industrial-controller",
+      "lds:construction/component/power-supply-unit"
+    ],
+    "implies": [
+      "lds:construction/assembly/field-installation-ready",
+      "lds:construction/assembly/commissioning-enabled",
+      "lds:construction/assembly/monitoring-capable"
+    ]
+  },
+
+  "media": {
+    "spec_sheet": "https://github.com/jenkintownelectricity/SUPA-SAINT.git/blob/main/docs/assembly-specification.pdf"
+  }
+}
