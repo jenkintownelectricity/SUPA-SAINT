@@ -34,7 +34,7 @@ export function SAINTWhiteLabel({ role }: { role: Role }) {
   const [previewActive, setPreviewActive] = useState(false);
 
   const canManage = validate({
-    action: 'manage_white_label',
+    action: 'manage_branding',
     role,
     context: { entity: 'white-label' },
   }).result === 'ALLOWED';

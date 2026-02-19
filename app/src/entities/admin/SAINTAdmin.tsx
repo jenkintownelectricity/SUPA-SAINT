@@ -42,7 +42,7 @@ export function SAINTAdmin({ role }: { role: Role }) {
   const { validate, getRecentAuditEntries } = useSAINTKernel();
 
   const canManage = validate({
-    action: 'manage_admin',
+    action: 'view_admin_dashboard',
     role,
     context: { entity: 'admin' },
   }).result === 'ALLOWED';

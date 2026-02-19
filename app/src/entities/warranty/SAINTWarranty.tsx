@@ -65,8 +65,8 @@ export function SAINTWarranty({ role }: { role: Role }) {
 
   // Role-based permissions
   const canSubmitClaim = validate({ action: 'submit_warranty_claim', role });
-  const canManageClaims = validate({ action: 'manage_warranty_claims', role });
-  const canCreateWarranty = validate({ action: 'create_warranty', role });
+  const canManageClaims = validate({ action: 'create_warranty_claim', role });
+  const canCreateWarranty = validate({ action: 'create_warranty_claim', role });
 
   // Role context labels
   const roleContext = role === 'contractor'
