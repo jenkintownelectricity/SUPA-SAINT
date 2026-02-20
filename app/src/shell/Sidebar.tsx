@@ -8,6 +8,7 @@ import {
   FolderOpen, ChevronLeft, ChevronRight, X, HardHat, LogOut
 } from 'lucide-react';
 import type { Role, NavItem } from '@/lib/types';
+import { useSAINTAuth } from '@/auth/SAINTAuth';
 
 // ── Navigation definitions from SAINT_SHELL.lds.json ──────────────────
 
@@ -27,7 +28,7 @@ const NAV_BY_ROLE: Record<Role, NavItem[]> = {
     { id: 'settings', label: 'Settings', icon: 'Settings', entity: 'admin' },
   ],
   gcp_engineer: [
-    { id: 'admin', label: 'Dashboard', icon: 'LayoutDashboard', entity: 'admin' },
+    { id: 'engineer-dash', label: 'Dashboard', icon: 'LayoutDashboard', entity: 'reporting' },
     { id: 'shop-drawings', label: 'Shop Drawings', icon: 'FileText', entity: 'shop-drawings' },
     { id: 'product-config', label: 'Products', icon: 'Package', entity: 'product-config' },
     { id: 'warranty', label: 'Warranty', icon: 'Shield', entity: 'warranty' },
@@ -68,11 +69,10 @@ interface SidebarProps {
 }
 
 export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onMobileClose, activeEntity }: SidebarProps) {
-  // We need to get the role from somewhere. For now we'll get it from a global.
-  // In the real app this comes from AuthContext.
-  const role = (typeof window !== 'undefined' && (window as any).__SAINT_ROLE__) || 'gcp_admin';
+  const { currentRole, currentUser, logout } = useSAINTAuth();
+  const role = currentRole || 'gcp_admin';
   const navItems = NAV_BY_ROLE[role as Role] || NAV_BY_ROLE.gcp_admin;
-  const user = typeof window !== 'undefined' ? (window as any).__SAINT_USER__ : null;
+  const user = currentUser;
 
   return (
     <aside
@@ -158,9 +158,8 @@ export function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onMobileClose
             </div>
             <button
               onClick={() => {
-                if (typeof window !== 'undefined' && (window as any).__SAINT_LOGOUT__) {
-                  (window as any).__SAINT_LOGOUT__();
-                }
+                logout();
+                window.location.href = '/';
               }}
               className="text-white/30 hover:text-white/70 transition-colors"
               title="Logout"

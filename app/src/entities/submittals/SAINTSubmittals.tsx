@@ -86,8 +86,8 @@ export function SAINTSubmittals({ role }: { role: Role }) {
   const draftCount = submittals.filter((s) => s.status === 'draft').length;
 
   // Role permissions
-  const canCreate = validate({ action: 'create_submittal', role });
-  const canReview = validate({ action: 'review_submittal', role });
+  const canCreate = validate({ action: 'manage_submittals', role });
+  const canReview = validate({ action: 'review_submittals', role });
 
   // Role context
   const roleContext = role === 'gcp_engineer'

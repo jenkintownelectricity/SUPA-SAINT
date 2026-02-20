@@ -222,7 +222,6 @@ export function SAINTContractorDash({ role }: { role: Role }) {
             <h2 className="text-lg font-semibold text-white mb-4">Recent Activity</h2>
             <div className="space-y-3">
               {notifications.map((notif) => {
-                const validation = validate({ action: 'view_notification', role });
                 return (
                   <div
                     key={notif.id}
@@ -250,10 +249,10 @@ export function SAINTContractorDash({ role }: { role: Role }) {
             <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { label: 'Download Drawings', icon: Download, action: 'download_drawings' },
-                { label: 'Upload Photos', icon: Camera, action: 'upload_photos' },
-                { label: 'View Submittals', icon: ClipboardCheck, action: 'view_submittals' },
-                { label: 'Contact Engineer', icon: MessageCircle, action: 'contact_engineer' },
+                { label: 'Download Drawings', icon: Download, action: 'download_shop_drawings' },
+                { label: 'Upload Photos', icon: Camera, action: 'upload_field_photos' },
+                { label: 'View Submittals', icon: ClipboardCheck, action: 'view_own_submittals' },
+                { label: 'Contact Engineer', icon: MessageCircle, action: 'contact_gcp_engineer' },
               ].map((btn) => {
                 const result = validate({ action: btn.action, role });
                 const isAllowed = result.result === 'ALLOWED';
